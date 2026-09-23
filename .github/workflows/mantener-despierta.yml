@@ -1,0 +1,14 @@
+# El plan gratuito de Render apaga la app tras 15 minutos sin visitas.
+# Esta tarea gratuita de GitHub la visita cada 10 minutos para que siempre responda rápido
+# y siga actualizando clima, alertas y precios.
+name: Mantener despierta la app
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+jobs:
+  visitar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - run: curl -fsS --max-time 90 --retry 2 https://campoentrerriano.onrender.com/salud || true
