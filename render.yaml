@@ -1,0 +1,21 @@
+# Publicación en Render (https://render.com): "New +" > "Blueprint" y elegir este repositorio de GitHub.
+# Plan gratuito: sin disco persistente. Los datos de las fuentes se vuelven a descargar solos al arrancar,
+# pero el contenido cargado a mano en /admin se pierde cuando Render reinicia o redepliega la app.
+# La contraseña de /admin la genera Render sola: se ve en el panel de Render > campoentrerriano > Environment.
+services:
+  - type: web
+    name: campoentrerriano
+    runtime: node
+    plan: free
+    region: virginia
+    buildCommand: "echo sin dependencias"
+    startCommand: "npm start"
+    healthCheckPath: /salud
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22.14.0"
+      - key: ADMIN_PASSWORD
+        generateValue: true
+      - key: SESSION_SECRET
+        generateValue: true
