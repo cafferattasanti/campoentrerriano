@@ -1,0 +1,276 @@
+{
+  "_nota": "Fichas basadas en el Sistema Nacional de Vigilancia y Monitoreo de Plagas (SINAVIMO, SENASA) y comunicados oficiales de SENASA e INTA, consultados el 23/09/2026. No se recomiendan productos: usar solo fitosanitarios registrados en SENASA y con indicación de un ingeniero agrónomo.",
+  "revisado": "2026-09-23",
+  "queHacerGeneral": [
+    "Recorrer y monitorear el lote seguido, sobre todo cuando el clima favorece la plaga.",
+    "Consultar a un ingeniero agrónomo antes de aplicar cualquier producto.",
+    "Usar solamente productos registrados en el SENASA para ese cultivo y esa plaga, respetando la etiqueta.",
+    "Si sospechás una plaga cuarentenaria o de denuncia (por ejemplo HLB en citrus), avisar al SENASA: WhatsApp 11 5700 5704."
+  ],
+  "cultivos": [
+    {
+      "id": "soja",
+      "nombre": "Soja",
+      "plagas": [
+        {
+          "nombre": "Roya de la soja",
+          "cientifico": "Phakopsora pachyrhizi",
+          "tipo": "Enfermedad (hongo)",
+          "sintomas": "Empieza en las hojas de abajo, cerca de la floración: primero una decoloración amarilla y después pústulas chicas marrones, sobre todo en el envés de la hoja. Puede confundirse con mancha marrón y pústula bacteriana.",
+          "identificar": "Mirar el envés de las hojas inferiores con lupa: pústulas marrón-rojizas salientes que largan un polvillo de esporas.",
+          "condiciones": "Temperaturas de 15 a 28 °C, alta humedad con al menos 6 horas de rocío y lluvias alternadas con días frescos. En condiciones favorables puede pasar de una infección inicial al 90% en 3 semanas.",
+          "prevencion": "Monitoreo desde floración, especialmente con clima húmedo.",
+          "riesgo": "Variable — alto con clima húmedo en floración",
+          "fuente": { "nombre": "SINAVIMO — Phakopsora pachyrhizi", "url": "https://www.sinavimo.gob.ar/plaga/phakopsora-pachyrhizi" }
+        },
+        {
+          "nombre": "Mancha ojo de rana",
+          "cientifico": "Cercospora sojina",
+          "tipo": "Enfermedad (hongo)",
+          "sintomas": "Manchas circulares a angulares en hoja, de rojizas a marrones, con borde marrón rojizo y SIN halo amarillo. Puntos grises a negros en el envés. Aparece desde floración; también en tallos y vainas.",
+          "identificar": "La falta de halo amarillo alrededor de la mancha es lo que la distingue.",
+          "condiciones": "Ver ficha oficial.",
+          "prevencion": "Monitoreo desde floración.",
+          "riesgo": "Variable",
+          "fuente": { "nombre": "SINAVIMO — Cercospora sojina", "url": "https://www.sinavimo.gob.ar/plaga/cercospora-sojina" }
+        },
+        {
+          "nombre": "Chinche de la alfalfa",
+          "cientifico": "Piezodorus guildinii",
+          "tipo": "Insecto",
+          "sintomas": "Ninfas y adultos pican las vainas: granos chuzos, arrugados o manchados, podredumbre interna y retención foliar (plantas que no se secan).",
+          "identificar": "Chinches en las vainas durante el llenado de granos.",
+          "condiciones": "Se activa con temperaturas cálidas.",
+          "prevencion": "Monitoreo en llenado de granos.",
+          "riesgo": "Alto en llenado de granos",
+          "fuente": { "nombre": "SINAVIMO — Piezodorus guildinii", "url": "https://www.sinavimo.gob.ar/plaga/piezodorus-guildinii" }
+        },
+        {
+          "nombre": "Chinche verde",
+          "cientifico": "Nezara viridula",
+          "tipo": "Insecto",
+          "sintomas": "Succiona savia e inyecta saliva tóxica: tejidos muertos, botones florales deformes o secos, y semillas vanas o livianas si ataca en floración y llenado.",
+          "identificar": "Chinche verde sobre brotes tiernos, flores y vainas.",
+          "condiciones": "Favorecida por clima cálido y húmedo; más activa en primavera y verano.",
+          "prevencion": "Monitoreo en floración y llenado.",
+          "riesgo": "Variable",
+          "fuente": { "nombre": "SINAVIMO — Nezara viridula", "url": "https://www.sinavimo.gob.ar/plaga/nezara-viridula" }
+        },
+        {
+          "nombre": "Oruga medidora",
+          "cientifico": "Rachiplusia nu",
+          "tipo": "Insecto (oruga defoliadora)",
+          "sintomas": "Ataques en manchones que se extienden rápido. Empieza por las hojas de abajo; las hojas quedan con aspecto de red (solo quedan las nervaduras).",
+          "identificar": "Orugas que caminan «midiendo» (arquean el cuerpo) sobre las hojas.",
+          "condiciones": "Clima cálido y húmedo, 25-30 °C.",
+          "prevencion": "Monitoreo de defoliación y cantidad de orugas.",
+          "riesgo": "Variable",
+          "fuente": { "nombre": "SINAVIMO — Rachiplusia nu", "url": "https://www.sinavimo.gob.ar/plaga/rachiplusia-nu" }
+        },
+        {
+          "nombre": "Oruga de las leguminosas",
+          "cientifico": "Anticarsia gemmatalis",
+          "tipo": "Insecto (oruga defoliadora)",
+          "sintomas": "Las larvas comen las hojas dejando las nervaduras. En ataques fuertes comen brotes, tallos tiernos, vainas y semillas en formación.",
+          "identificar": "Orugas en las hojas; con mucha humedad pueden aparecer orugas momificadas blancas (hongo que las controla).",
+          "condiciones": "Ver ficha oficial.",
+          "prevencion": "Monitoreo de defoliación.",
+          "riesgo": "Variable",
+          "fuente": { "nombre": "SINAVIMO — Anticarsia gemmatalis", "url": "https://www.sinavimo.gob.ar/plaga/anticarsia-gemmatalis" }
+        }
+      ]
+    },
+    {
+      "id": "maiz",
+      "nombre": "Maíz",
+      "plagas": [
+        {
+          "nombre": "Chicharrita del maíz y achaparramiento",
+          "cientifico": "Dalbulus maidis (vector) / Spiroplasma kunkelii",
+          "tipo": "Insecto que transmite una enfermedad bacteriana",
+          "sintomas": "Hojas rojizas o púrpuras, amarillentas, con rayas cloróticas en la base de las hojas jóvenes. Plantas enanas por entrenudos cortos, espigas estériles en los nudos, mazorcas chicas o sin grano y muerte temprana. Los síntomas suelen aparecer cerca de la floración.",
+          "identificar": "Insecto chico que se alimenta en el cogollo, en las axilas y en la parte baja de la planta. El SENASA monitorea con trampas.",
+          "condiciones": "La expresión de síntomas depende de la temperatura, del híbrido y de la presión de insectos.",
+          "prevencion": "Detección temprana con monitoreo sistemático de trampas y plantas; híbridos tolerantes; aplicaciones oportunas con productos autorizados.",
+          "riesgo": "Alto — plaga de vigilancia nacional",
+          "avisar": "Reportar detecciones al SENASA por WhatsApp (+54 9 11 5700-5704).",
+          "fuente": { "nombre": "SENASA — Chicharrita del maíz; SINAVIMO — Dalbulus maidis y Spiroplasma kunkelii", "url": "https://www.argentina.gob.ar/senasa/cereales-produccion-primaria/chicharrita-del-maiz" }
+        },
+        {
+          "nombre": "Oruga militar tardía (cogollero)",
+          "cientifico": "Spodoptera frugiperda",
+          "tipo": "Insecto (oruga)",
+          "sintomas": "En la emergencia corta plantitas a ras del suelo. Después raspa las hojas dejando áreas transparentes («ventanitas») y puede meterse en el cogollo y en las espigas.",
+          "identificar": "Hojas raspadas con ventanitas y orugas en el cogollo.",
+          "condiciones": "Temperaturas cálidas y estables; se frena por debajo de 7-8 °C. El viento dispersa a los adultos.",
+          "prevencion": "Monitoreo desde la emergencia.",
+          "riesgo": "Alto en siembras tardías",
+          "fuente": { "nombre": "SINAVIMO — Spodoptera frugiperda", "url": "https://www.sinavimo.gob.ar/plaga/spodoptera-frugiperda" }
+        },
+        {
+          "nombre": "Tizón foliar del maíz",
+          "cientifico": "Exserohilum turcicum",
+          "tipo": "Enfermedad (hongo)",
+          "sintomas": "Manchitas castaño-rojizas que crecen hasta formar manchas alargadas de 8-10 cm, color paja con margen pardo rojizo. Empieza en las hojas de abajo y sube. Las hojas se secan como si hubiera helado.",
+          "identificar": "Manchas largas en el sentido de las nervaduras con polvillo pardo negruzco.",
+          "condiciones": "Humedad ambiente favorable. El hongo sobrevive en el rastrojo.",
+          "prevencion": "Monitoreo; tener en cuenta el rastrojo de maíz del lote.",
+          "riesgo": "Variable",
+          "fuente": { "nombre": "SINAVIMO — Exserohilum turcicum", "url": "https://www.sinavimo.gob.ar/plaga/exserohilum-turcicum" }
+        }
+      ]
+    },
+    {
+      "id": "trigo",
+      "nombre": "Trigo",
+      "plagas": [
+        {
+          "nombre": "Fusariosis de la espiga (golpe blanco)",
+          "cientifico": "Fusarium graminearum",
+          "tipo": "Enfermedad (hongo)",
+          "sintomas": "Áreas pardo oscuras en la base de las glumas; si se infecta la base del raquis, toda la espiga queda blanca. Muchos granos enfermos pesan normal y no se van con la limpieza de la cosechadora. Produce micotoxinas (DON).",
+          "identificar": "Espigas total o parcialmente blanqueadas en plantas todavía verdes.",
+          "condiciones": "Lluvias frecuentes, alta humedad y temperaturas templadas a cálidas. El período crítico va desde que aparecen las primeras anteras hasta el inicio del llenado.",
+          "prevencion": "Conocer la fecha de floración (herramienta Cronotrigo) y el riesgo (modelo de pronóstico). Usar cultivares con mejor comportamiento. El SENASA desaconseja las estrobilurinas después de floración porque aumentan el DON.",
+          "riesgo": "Alto con lluvias en floración",
+          "fuente": { "nombre": "SINAVIMO — Fusarium graminearum; Argentina.gob.ar — Fusariosis del trigo: la ventana crítica", "url": "https://www.argentina.gob.ar/noticias/fusariosis-del-trigo-la-ventana-critica-para-anticiparse-al-golpe-blanco" }
+        },
+        {
+          "nombre": "Roya amarilla",
+          "cientifico": "Puccinia striiformis",
+          "tipo": "Enfermedad (hongo)",
+          "sintomas": "Pústulas amarillo limón ordenadas en hileras a lo largo de las nervaduras (roya «listada»), primero en las hojas de abajo. En ataques graves las espigas se ponen amarillo dorado y el grano queda arrugado.",
+          "identificar": "Rayas de polvillo amarillo en las hojas.",
+          "condiciones": "Temperaturas de 10 a 15 °C, lloviznas o alta humedad y al menos 6 horas de hoja mojada. Se frena con más de 20 °C. Mucho nitrógeno la favorece.",
+          "prevencion": "Cultivares con buen comportamiento y monitoreo en primavera.",
+          "riesgo": "Alto en primaveras frescas y húmedas",
+          "fuente": { "nombre": "SINAVIMO — Puccinia striiformis", "url": "https://www.sinavimo.gob.ar/plaga/puccinia-striiformis" }
+        },
+        {
+          "nombre": "Roya de la hoja (roya anaranjada)",
+          "cientifico": "Puccinia recondita (P. triticina)",
+          "tipo": "Enfermedad (hongo)",
+          "sintomas": "Pústulas anaranjadas sueltas sobre las hojas. Baja el número y el llenado de granos (bajo peso hectolítrico). En cultivares muy susceptibles la pérdida puede llegar al 30%.",
+          "identificar": "Pústulas anaranjadas aisladas, no en hileras.",
+          "condiciones": "15 a 22 °C (óptimo 20 °C) y hoja mojada o rocío por 6 horas o más. Sobre todo otoño y primavera.",
+          "prevencion": "Cultivares resistentes y monitoreo.",
+          "riesgo": "Variable",
+          "fuente": { "nombre": "SINAVIMO — Puccinia recondita", "url": "https://www.sinavimo.gob.ar/plaga/puccinia-recondita" }
+        }
+      ]
+    },
+    {
+      "id": "arroz",
+      "nombre": "Arroz",
+      "plagas": [
+        {
+          "nombre": "Pyricularia (tizón o quemado)",
+          "cientifico": "Pyricularia grisea",
+          "tipo": "Enfermedad (hongo)",
+          "sintomas": "Lesiones blanquecinas o gris verdosas que después son manchas alargadas con borde oscuro. Se unen y pueden secar la hoja entera o quebrar el tallo. Sobre las lesiones aparece un polvillo grisáceo.",
+          "identificar": "Manchas en forma de huso con centro gris y borde marrón.",
+          "condiciones": "Períodos largos de alta humedad y temperaturas de 25 a 28 °C.",
+          "prevencion": "Variedades con buen comportamiento y monitoreo.",
+          "riesgo": "Alto en variedades susceptibles",
+          "fuente": { "nombre": "SINAVIMO — Pyricularia grisea", "url": "https://www.sinavimo.gob.ar/plaga/pyricularia-grisea" }
+        },
+        {
+          "nombre": "Mancha marrón (helmintosporiosis)",
+          "cientifico": "Bipolaris oryzae",
+          "tipo": "Enfermedad (hongo)",
+          "sintomas": "Puntos o manchas circulares u ovaladas marrones, más claras en el centro y a veces con halo amarillo, repartidas por la hoja. En la panoja mancha el cuello y los granos y baja el rendimiento y la calidad molinera.",
+          "identificar": "Manchas ovaladas marrones distribuidas en toda la hoja.",
+          "condiciones": "Ver ficha oficial.",
+          "prevencion": "Monitoreo.",
+          "riesgo": "Variable",
+          "fuente": { "nombre": "SINAVIMO — Bipolaris oryzae", "url": "https://www.sinavimo.gob.ar/plaga/bipolaris-oryzae" }
+        },
+        {
+          "nombre": "Gorgojo del arroz (granos almacenados)",
+          "cientifico": "Sitophilus oryzae",
+          "tipo": "Insecto",
+          "sintomas": "Las larvas se comen el grano por dentro; los adultos dejan agujeros de salida de 1,5 mm. Ataca en el campo y en el almacenamiento.",
+          "identificar": "Gorgojos caminando sobre la masa de granos y granos agujereados.",
+          "condiciones": "Unos 25 °C y humedad del grano mayor al 12%.",
+          "prevencion": "Almacenar grano seco y limpio, y controlar la temperatura.",
+          "riesgo": "Variable",
+          "fuente": { "nombre": "SINAVIMO — Sitophilus oryzae", "url": "https://www.sinavimo.gob.ar/plaga/sitophilus-oryzae" }
+        }
+      ]
+    },
+    {
+      "id": "girasol",
+      "nombre": "Girasol",
+      "plagas": [
+        {
+          "nombre": "Podredumbre por Sclerotinia",
+          "cientifico": "Sclerotinia sclerotiorum",
+          "tipo": "Enfermedad (hongo)",
+          "sintomas": "Mancha castaño oscura o negra en el tallo a nivel del suelo que forma un anillo y estrangula la planta. Hojas de abajo muy amarillas y planta caída en las horas de calor. Moho blanco algodonoso con granitos negros (esclerocios).",
+          "identificar": "Moho blanco con esclerocios negros en tallo o capítulo.",
+          "condiciones": "Alta humedad, hoja mojada por mucho tiempo y 10-25 °C. Suelos húmedos o mal drenados, rotaciones cortas y floración con lluvias.",
+          "prevencion": "Rotaciones largas con cultivos no susceptibles y evitar canopias muy densas.",
+          "riesgo": "Alto con floración lluviosa",
+          "fuente": { "nombre": "SINAVIMO — Sclerotinia sclerotiorum", "url": "https://www.sinavimo.gob.ar/plaga/sclerotinia-sclerotiorum" }
+        },
+        {
+          "nombre": "Roya negra del girasol",
+          "cientifico": "Puccinia helianthi",
+          "tipo": "Enfermedad (hongo)",
+          "sintomas": "Manchas muertas primero en las hojas de abajo y después en las de arriba; pústulas pardo oscuras o color herrumbre. En ataques fuertes, también en tallo, pecíolo y brácteas del capítulo.",
+          "identificar": "Pústulas color óxido en las hojas.",
+          "condiciones": "Alta humedad, temperaturas moderadas y agua libre sobre la hoja (rocío, lluvias frecuentes).",
+          "prevencion": "Monitoreo.",
+          "riesgo": "Variable",
+          "fuente": { "nombre": "SINAVIMO — Puccinia helianthi", "url": "https://www.sinavimo.gob.ar/plaga/puccinia-helianthi" }
+        },
+        {
+          "nombre": "Marchitamiento por Verticillium",
+          "cientifico": "Verticillium dahliae",
+          "tipo": "Enfermedad (hongo del suelo)",
+          "sintomas": "Manchones de plantas que se secan rápido en comparación con el resto del lote.",
+          "identificar": "Manchones que se repiten donde el hongo quedó en el suelo.",
+          "condiciones": "Estrés por calor, mucha luz o sequía. Plantas con mucho nitrógeno son más susceptibles.",
+          "prevencion": "Rotación y manejo del lote.",
+          "riesgo": "Variable",
+          "fuente": { "nombre": "SINAVIMO — Verticillium dahliae", "url": "https://www.sinavimo.gob.ar/plaga/verticillium-dahliae" }
+        }
+      ]
+    },
+    {
+      "id": "sorgo",
+      "nombre": "Sorgo",
+      "plagas": [
+        {
+          "nombre": "Pulgón amarillo del sorgo",
+          "cientifico": "Melanaphis sacchari",
+          "tipo": "Insecto",
+          "sintomas": "Se alimenta de la savia: hojas amarillentas (clorosis), menos absorción de nutrientes y problemas en la salida de la panoja.",
+          "identificar": "Colonias de pulgones amarillos en el envés de las hojas.",
+          "condiciones": "Ver ficha oficial e informes del INTA.",
+          "prevencion": "Monitoreo; híbridos con mejor comportamiento.",
+          "riesgo": "Alto — plaga en expansión",
+          "fuente": { "nombre": "SINAVIMO — Melanaphis sacchari", "url": "https://www.sinavimo.gob.ar/plaga/melanaphis-sacchari" }
+        }
+      ]
+    },
+    {
+      "id": "citricos",
+      "nombre": "Cítricos",
+      "plagas": [
+        {
+          "nombre": "HLB (Huanglongbing) y su vector, la chicharrita de los cítricos",
+          "cientifico": "Candidatus Liberibacter spp. / Diaphorina citri",
+          "tipo": "Enfermedad bacteriana transmitida por un insecto — plaga de control oficial",
+          "sintomas": "Amarillamiento de una o varias ramas, caída de hojas, brotación y floración fuera de época, caída de frutos y muerte de ramas. Hojas con manchas moteadas asimétricas y nervaduras engrosadas. Frutos chicos, deformes, mal coloreados y amargos. Se puede confundir con falta de nutrientes.",
+          "identificar": "El insecto vector extrae savia y produce mielcilla y fumagina; deforma los brotes nuevos.",
+          "condiciones": "Es la enfermedad más destructiva de los cítricos en el mundo.",
+          "prevencion": "Está prohibido trasladar fruta cítrica con hojas. Comprar plantas solo en viveros habilitados.",
+          "riesgo": "Muy alto — el SENASA refuerza los controles en Entre Ríos (2026)",
+          "avisar": "Avisar al SENASA ante síntomas o movimiento de fruta con hojas.",
+          "fuente": { "nombre": "SINAVIMO — Candidatus Liberibacter asiaticus y Diaphorina citri; SENASA Entre Ríos (25/06/2026)", "url": "https://www.argentina.gob.ar/noticias/entre-rios-informacion-sobre-hlb-y-control-del-movimiento-de-fruta-citrica-con-hojas" }
+        }
+      ]
+    }
+  ]
+}
