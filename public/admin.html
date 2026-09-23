@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Administración — El Campo Entrerriano</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <link rel="stylesheet" href="/css/admin.css">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+</head>
+<body>
+  <header class="masthead"><div class="masthead-inner"><a class="brand" href="/"><h1>El Campo Entrerriano</h1><span class="tag">Panel de administración</span></a></div></header>
+  <main id="contenido" tabindex="-1">
+    <section id="login" class="card" hidden>
+      <h2>Ingresar</h2>
+      <form id="loginform">
+        <label for="pw">Contraseña de administración</label>
+        <input id="pw" type="password" autocomplete="current-password" required class="input">
+        <button class="btn" type="submit">Ingresar</button>
+        <p id="loginmsg" class="status error" hidden></p>
+      </form>
+    </section>
+
+    <div id="panel" hidden>
+      <p class="note">Las fuentes se actualizan <strong>solas</strong>. Este panel sirve para controlar que todo funcione, forzar una actualización o cargar contenido propio. No hace falta entrar todos los días.</p>
+      <div class="admin-actions"><button class="btn secondary" id="refresh" type="button">↻ Recargar estado</button><button class="btn secondary" id="logout" type="button">Salir</button></div>
+
+      <section class="card mt"><h2>Estado de las fuentes</h2><div class="table-wrap"><table class="prices admin-table" id="sources"></table></div></section>
+
+      <section class="card mt"><h2>Fuentes de noticias</h2><div id="feeds"></div></section>
+
+      <section class="card mt"><h2>Cargar contenido propio</h2>
+        <p class="small">Todo contenido manual exige indicar la fuente. Se muestra con su fecha y la leyenda de la fuente.</p>
+        <form id="manualform" class="admin-form">
+          <label>Tipo
+            <select name="type" class="input">
+              <option value="alerta_sanitaria">Alerta sanitaria (aparece en Sanidad)</option>
+              <option value="alerta_meteo">Aviso meteorológico (aparece en Alertas)</option>
+              <option value="precio">Precio (aparece en Precios)</option>
+              <option value="aviso">Aviso general</option>
+            </select></label>
+          <label>Título <input name="title" class="input" required maxlength="200"></label>
+          <label>Texto <textarea name="body" class="input" rows="3" maxlength="2000"></textarea></label>
+          <label>Fuente (organismo o medio) <input name="sourceName" class="input" required maxlength="150"></label>
+          <label>Enlace a la fuente <input name="url" class="input" type="url" placeholder="https://"></label>
+          <label>Fecha del dato <input name="contentDate" class="input" type="date"></label>
+          <fieldset class="pricefields"><legend>Solo para precios</legend>
+            <label>Valor <input name="value" class="input" inputmode="decimal" placeholder="Ej.: 2850,50"></label>
+            <label>Unidad <input name="unit" class="input" placeholder="kg vivo, tonelada, quintal…"></label>
+            <label>Moneda <select name="currency" class="input"><option value="ARS">Pesos</option><option value="USD">Dólares</option></select></label>
+          </fieldset>
+          <button class="btn" type="submit">Guardar</button>
+          <p id="manualmsg" class="status" hidden></p>
+        </form>
+        <h3>Contenido cargado</h3><div id="manual"></div>
+      </section>
+
+      <section class="card mt"><h2>Noticias</h2>
+        <form id="newsform" class="admin-form">
+          <label>Título <input name="title" class="input" required maxlength="250"></label>
+          <label>Enlace a la nota original <input name="url" class="input" type="url" required placeholder="https://"></label>
+          <label>Medio / fuente <input name="sourceName" class="input" maxlength="100"></label>
+          <label>Resumen breve <textarea name="summary" class="input" rows="2" maxlength="400"></textarea></label>
+          <label>Categoría <select name="category" class="input"><option value="entre-rios">Entre Ríos</option><option value="sanidad">Sanidad</option><option value="clima">Clima</option><option value="agricultura">Agricultura</option><option value="ganaderia">Ganadería</option><option value="precios">Precios</option><option value="legislacion">Legislación</option><option value="senasa,sanidad">SENASA</option></select></label>
+          <button class="btn" type="submit">Agregar noticia</button>
+          <p id="newsmsg" class="status" hidden></p>
+        </form>
+        <div class="table-wrap"><table class="prices admin-table" id="news"></table></div>
+      </section>
+
+      <section class="card mt"><h2>Registro de actividad (logs)</h2><pre id="logs" class="logs"></pre></section>
+    </div>
+  </main>
+  <script src="/js/admin.js" defer></script>
+</body>
+</html>

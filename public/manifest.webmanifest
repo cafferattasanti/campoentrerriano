@@ -1,0 +1,11 @@
+{
+  "name": "El Campo Entrerriano",
+  "short_name": "Campo ER",
+  "description": "Clima, alertas, precios, sanidad y noticias del campo de Entre Ríos con fuentes oficiales.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5efe3",
+  "theme_color": "#1b2a47",
+  "lang": "es-AR",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

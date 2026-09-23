@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>El Campo Entrerriano — clima, alertas, precios y sanidad</title>
+  <meta name="description" content="Clima y alertas del SMN, precios de granos y hacienda, sanidad animal, medicamentos veterinarios del registro del SENASA, plagas y noticias del campo de Entre Ríos.">
+  <meta name="theme-color" content="#1b2a47">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <a class="skip" href="#contenido">Ir al contenido</a>
+  <header class="masthead">
+    <div class="masthead-inner">
+      <div class="topline">
+        <span id="fecha-hoy">Entre Ríos</span>
+        <div class="fontctl" role="group" aria-label="Tamaño de letra">
+          <span>Letra:</span>
+          <button type="button" id="font-down" aria-label="Achicar la letra">A−</button>
+          <button type="button" id="font-up" aria-label="Agrandar la letra">A+</button>
+        </div>
+      </div>
+      <a class="brand" href="#/">
+        <h1>El Campo Entrerriano</h1>
+        <span class="tag">Clima, precios y sanidad con fuentes oficiales</span>
+      </a>
+      <div class="locbar">
+        <label for="loc">📍 Localidad:</label>
+        <select id="loc" aria-label="Elegir localidad de Entre Ríos"></select>
+      </div>
+    </div>
+  </header>
+
+  <main id="contenido" tabindex="-1">
+    <p class="loading">Cargando…</p>
+  </main>
+
+  <footer class="site">
+    <p><strong>El Campo Entrerriano</strong> reúne información de organismos oficiales y fuentes reconocidas. Cada dato indica su fuente y cuándo se actualizó.</p>
+    <p><a href="#/fuentes">¿De dónde sale la información? Ver fuentes</a></p>
+    <p class="small">Pronóstico y alertas: Servicio Meteorológico Nacional. Datos de modelo: <a href="https://open-meteo.com/" rel="noopener">Open-Meteo.com</a> (CC BY 4.0). Sanidad y medicamentos: SENASA. Plagas: SINAVIMO (SENASA). La información veterinaria es orientativa y no reemplaza la evaluación de un veterinario.</p>
+    <p class="credit">SantiCaffa</p>
+  </footer>
+  <noscript><p class="loading">Para usar esta página hay que tener JavaScript activado.</p></noscript>
+  <script src="/js/app.js" defer></script>
+</body>
+</html>
