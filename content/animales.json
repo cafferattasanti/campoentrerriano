@@ -1,0 +1,356 @@
+{
+  "_nota": "Contenido curado a partir de páginas oficiales del SENASA e INTA (consultadas el 23/09/2026). Cada ficha lleva su fuente. No incluye dosis ni tratamientos: eso lo indica el veterinario.",
+  "revisado": "2026-09-23",
+  "avisoSenasa": {
+    "titulo": "Cómo avisar al SENASA ante una sospecha",
+    "texto": "Cualquier persona puede notificar una sospecha de enfermedad de denuncia obligatoria.",
+    "canales": [
+      "En la oficina local del SENASA más cercana",
+      "WhatsApp: 11 5700 5704",
+      "Correo: notificaciones@senasa.gob.ar",
+      "Formulario «Avisá al Senasa» en el sitio oficial"
+    ],
+    "fuente": {
+      "nombre": "SENASA — Notificación de sospechas de enfermedades de declaración obligatoria",
+      "url": "https://www.argentina.gob.ar/noticias/notificacion-de-sospechas-de-enfermedades-de-declaracion-obligatoria",
+      "fecha": "2024-09-05"
+    }
+  },
+  "cuandoLlamarVeterinario": [
+    "Animales que mueren de golpe, sobre todo si sale sangre por boca, nariz o ano (puede ser carbunclo: no los cuerée ni los queme).",
+    "Animales con síntomas nerviosos: se tambalean, no pueden tragar, se caen o cambian de conducta.",
+    "Abortos, terneros o lechones nacidos muertos o débiles.",
+    "Mortandad en aves o cerdos, o muchos animales enfermos al mismo tiempo.",
+    "Fiebre, decaimiento o falta de apetito que no mejoran.",
+    "Antes de usar cualquier antibiótico, antiparasitario o vacuna en animales destinados a consumo."
+  ],
+  "cuandoLlamarFuente": "Basado en los signos de alerta que difunde el SENASA en sus campañas «Avisá al Senasa» (carbunclo, rabia paresiante, brucelosis, peste porcina, influenza aviar).",
+  "especies": [
+    {
+      "id": "bovinos",
+      "nombre": "Bovinos",
+      "emoji": "🐄",
+      "vacunacion": [
+        {
+          "titulo": "Fiebre aftosa (obligatoria)",
+          "texto": "En la primera campaña anual se vacunan todas las categorías bovinas y bubalinas. En la segunda campaña se vacunan solamente terneros y terneras (refuerzo). En Entre Ríos la segunda campaña 2026 fue del 8 de junio al 10 de julio.",
+          "fuente": {
+            "nombre": "SENASA — Calendario de vacunación 2026 (Res. SENASA 711/2025) y segunda campaña 2026",
+            "url": "https://www.argentina.gob.ar/noticias/comienza-la-segunda-campana-anual-de-vacunacion-contra-la-fiebre-aftosa-y-la-brucelosis",
+            "fecha": "2026-06-08"
+          }
+        },
+        {
+          "titulo": "Brucelosis (obligatoria)",
+          "texto": "Todas las terneras de 3 a 8 meses deben vacunarse con cepa 19, junto con la campaña de aftosa.",
+          "fuente": {
+            "nombre": "SENASA — Brucelosis bovina",
+            "url": "https://www.argentina.gob.ar/senasa/programas-sanitarios/cadenaanimal/bovinos-y-bubalinos/bovinos-y-bubalinos-produccion-primaria/brucelosis-bovina",
+            "fecha": "2026-09-23"
+          }
+        }
+      ],
+      "enfermedades": [
+        {
+          "nombre": "Fiebre aftosa",
+          "tipo": "Enfermedad viral",
+          "denuncia": true,
+          "zoonosis": false,
+          "sintomas": "La página oficial del programa no describe los signos. Ante cualquier sospecha, no mover animales y avisar al SENASA.",
+          "prevencion": "Vacunación sistemática, obligatoria y universal de bovinos y búfalos en la zona con vacunación (Entre Ríos está en esa zona). Argentina es libre de aftosa, reconocida por la OMSA.",
+          "queHacer": "Cumplir las dos campañas de vacunación. Ante sospecha, notificar de inmediato al SENASA.",
+          "riesgo": "Alto — enfermedad de denuncia obligatoria",
+          "fuente": {
+            "nombre": "SENASA — Fiebre aftosa",
+            "url": "https://www.argentina.gob.ar/senasa/programas-sanitarios/cadena-animal/bovinos-y-bubalinos/bovinos-y-bubalinos-produccion-primaria/fiebre-aftosa",
+            "fecha": "2026-09-23"
+          }
+        },
+        {
+          "nombre": "Brucelosis bovina",
+          "tipo": "Enfermedad bacteriana (Brucella abortus)",
+          "denuncia": null,
+          "zoonosis": true,
+          "sintomas": "Problemas reproductivos y abortos en el rodeo. Se transmite a las personas.",
+          "prevencion": "Vacunar el 100% de las terneras de 3 a 8 meses con cepa 19. Hacer los análisis de sangre del rodeo que exige el plan nacional.",
+          "queHacer": "Consultar al veterinario ante abortos. Cumplir el Plan Nacional de Control y Erradicación.",
+          "riesgo": "Alto — afecta a las personas",
+          "fuente": {
+            "nombre": "SENASA — Brucelosis bovina",
+            "url": "https://www.argentina.gob.ar/senasa/programas-sanitarios/cadenaanimal/bovinos-y-bubalinos/bovinos-y-bubalinos-produccion-primaria/brucelosis-bovina",
+            "fecha": "2026-09-23"
+          }
+        },
+        {
+          "nombre": "Tuberculosis bovina",
+          "tipo": "Enfermedad bacteriana (Mycobacterium bovis)",
+          "denuncia": null,
+          "zoonosis": true,
+          "sintomas": "Muchas veces se detecta recién en la faena, por lesiones en los órganos. Puede pasar a cerdos, ovejas, perros, gatos, fauna y personas.",
+          "prevencion": "Tuberculinización de rodeos (control con la prueba de tuberculina) según el plan nacional, sobre todo en tambos y cabañas.",
+          "queHacer": "Si en la faena aparecen lesiones compatibles, el establecimiento debe ingresar obligatoriamente al Plan Nacional (Res. SENASA 128/2012).",
+          "riesgo": "Alto — riesgo para trabajadores rurales, tamberos y frigoríficos",
+          "fuente": {
+            "nombre": "SENASA — Tuberculosis bovina",
+            "url": "https://www.argentina.gob.ar/senasa/programas-sanitarios/cadena-animal/bovinos-y-bubalinos/bovinos-y-bubalinos-producci%C3%B3n-primaria/tuberculosis-bovina",
+            "fecha": "2026-09-23"
+          }
+        },
+        {
+          "nombre": "Garrapata común del bovino y tristeza bovina",
+          "tipo": "Parásito externo (Rhipicephalus microplus) que transmite babesiosis y anaplasmosis",
+          "denuncia": null,
+          "zoonosis": false,
+          "sintomas": "Garrapatas sobre los animales. Con cargas altas (más de 30 parásitos) bajan el engorde y la producción de leche. Transmite la tristeza bovina, que puede causar mortandad.",
+          "prevencion": "Control integrado: uso racional de garrapaticidas, manejo de pasturas y asesoramiento profesional. La vacuna contra tristeza se recomienda bajo estricta supervisión veterinaria.",
+          "queHacer": "Para mover animales desde zona con garrapata a zona sin garrapata, los animales deben estar limpios y pasar inspección previa. En zona libre es obligatorio avisar si se encuentra una garrapata viva. Rige la Res. SENASA 655/2026.",
+          "riesgo": "Alto en el litoral — mayor incidencia en otoño",
+          "fuente": {
+            "nombre": "SENASA — Garrapata del bovino; INTA/SENASA Entre Ríos (10/09/2025)",
+            "url": "https://www.argentina.gob.ar/senasa/programas-sanitarios/cadenaanimal/bovinos-y-bubalinos/bovinos-y-bubalinos-produccion-primaria/garrapatas-del-bovino",
+            "fecha": "2026-09-23"
+          }
+        },
+        {
+          "nombre": "Carbunclo bacteridiano (ántrax)",
+          "tipo": "Enfermedad bacteriana",
+          "denuncia": true,
+          "zoonosis": true,
+          "sintomas": "Muerte súbita con sangre en boca, nariz y ano. En personas produce el «grano malo»: una lesión que pica, no cicatriza y forma una cáscara negra.",
+          "prevencion": "Vacunar el ganado según indique el veterinario y el SENASA en caso de focos.",
+          "queHacer": "NO cuerear ni abrir el animal muerto. NO quemarlo (dispersa las esporas). Enterrarlo y taparlo en el mismo lugar. Avisar al SENASA. Si una persona tuvo contacto y presenta síntomas, ir al médico e informarlo.",
+          "riesgo": "Alto — grave para las personas",
+          "fuente": {
+            "nombre": "SENASA — Carbunclo: características, sintomatología y prevención",
+            "url": "https://www.argentina.gob.ar/noticias/carbunclo-caracteristicas-sintomatologia-y-prevencion",
+            "fecha": "2020-06-19"
+          }
+        },
+        {
+          "nombre": "Rabia paresiante",
+          "tipo": "Enfermedad viral transmitida por el murciélago vampiro",
+          "denuncia": true,
+          "zoonosis": true,
+          "sintomas": "Síntomas nerviosos. Las personas se contagian sobre todo al revisar la boca o dar medicamentos por boca a animales con dificultad para tragar.",
+          "prevencion": "Entre Ríos NO está dentro de la zona endémica. Ante focos cercanos, el SENASA puede exigir vacunar todo el ganado.",
+          "queHacer": "Avisar al SENASA ante animales con síntomas nerviosos. Solo el veterinario toma muestras. Enterrar o incinerar los cadáveres. Denunciar refugios de vampiros.",
+          "riesgo": "Bajo en Entre Ríos (fuera de zona endémica), pero grave si aparece",
+          "fuente": {
+            "nombre": "SENASA — Rabia paresiante",
+            "url": "https://www.argentina.gob.ar/senasa/programas-sanitarios/cadenaanimal/bovinos-y-bubalinos/bovinos-y-bubalinos-produccion-primaria/rabia-paresiante",
+            "fecha": "2026-09-23"
+          }
+        }
+      ]
+    },
+    {
+      "id": "equinos",
+      "nombre": "Equinos",
+      "emoji": "🐎",
+      "vacunacion": [
+        {
+          "titulo": "Encefalomielitis equina (obligatoria)",
+          "texto": "Desde los 2 meses de edad: primera dosis y refuerzo a las 2 a 4 semanas. Los caballos con ambas dosis se revacunan una vez por año. La aplica y registra un veterinario.",
+          "fuente": {
+            "nombre": "SENASA — Encefalomielitis equina: cómo prevenirla en la temporada de calor",
+            "url": "https://www.argentina.gob.ar/noticias/encefalomielitis-equina-como-prevenir-la-enfermedad-en-la-temporada-de-calor",
+            "fecha": "2026-09-18"
+          }
+        },
+        {
+          "titulo": "Influenza equina",
+          "texto": "Obligatoria para los équidos que van a remates, exposiciones, hipódromos, clubes hípicos, studs, centros tradicionalistas, jineteadas, pato, polo y otras actividades que reúnen caballos. Se repite cada 3 o 6 meses según la vacuna.",
+          "fuente": {
+            "nombre": "SENASA — Influenza equina",
+            "url": "https://www.argentina.gob.ar/senasa/programas-sanitarios/cadenaanimal/equinos/equinos-produccion-primaria/influenza-equina",
+            "fecha": "2026-09-23"
+          }
+        }
+      ],
+      "enfermedades": [
+        {
+          "nombre": "Anemia infecciosa equina (AIE)",
+          "tipo": "Enfermedad viral (retrovirus)",
+          "denuncia": null,
+          "zoonosis": false,
+          "sintomas": "Fiebre (a veces menos de un día), falta de apetito, debilidad, ictericia, respiración y pulso acelerados, hinchazones, sangre en la bosta y puntitos rojos en mucosas. Muchos caballos no muestran síntomas pero quedan portadores de por vida.",
+          "prevencion": "No hay vacuna. La transmiten tábanos y moscas picadoras y los objetos cortantes con sangre (agujas). Análisis (Test de Coggins) al ingresar caballos y una vez por año.",
+          "queHacer": "Para mover un equino se exige análisis negativo con validez de 60 días. Los positivos se marcan y se sacrifican o van a faena; el campo queda interdicto.",
+          "riesgo": "Alto — sin tratamiento ni vacuna",
+          "fuente": {
+            "nombre": "SENASA — Anemia infecciosa equina",
+            "url": "https://www.argentina.gob.ar/senasa/programas-sanitarios/cadenaanimal/equinos/equinos-produccion-primaria/anemia-infecciosa-equina",
+            "fecha": "2026-09-23"
+          }
+        },
+        {
+          "nombre": "Encefalomielitis equina",
+          "tipo": "Enfermedad viral transmitida por mosquitos",
+          "denuncia": true,
+          "zoonosis": true,
+          "sintomas": "Puede pasar sin síntomas o con fiebre; en casos graves da signos nerviosos y muerte. Aumenta con el calor y las lluvias.",
+          "prevencion": "Vacunación obligatoria. Repelentes como complemento (no reemplazan la vacuna).",
+          "queHacer": "Ante sospecha, avisar de inmediato al SENASA.",
+          "riesgo": "Alto en primavera y verano",
+          "fuente": {
+            "nombre": "SENASA — Encefalomielitis equina (18/09/2026)",
+            "url": "https://www.argentina.gob.ar/noticias/encefalomielitis-equina-como-prevenir-la-enfermedad-en-la-temporada-de-calor",
+            "fecha": "2026-09-18"
+          }
+        },
+        {
+          "nombre": "Influenza equina (gripe equina)",
+          "tipo": "Enfermedad respiratoria viral",
+          "denuncia": null,
+          "zoonosis": false,
+          "sintomas": "Fiebre y tos seca, seguida de moco nasal espeso. Se contagia rápido entre caballos.",
+          "prevencion": "Vacunación (obligatoria para movimientos y concentraciones de caballos).",
+          "queHacer": "Aislar al animal enfermo y consultar al veterinario.",
+          "riesgo": "Medio — se contagia rápido en concentraciones",
+          "fuente": {
+            "nombre": "SENASA — Influenza equina",
+            "url": "https://www.argentina.gob.ar/senasa/programas-sanitarios/cadenaanimal/equinos/equinos-produccion-primaria/influenza-equina",
+            "fecha": "2026-09-23"
+          }
+        }
+      ]
+    },
+    {
+      "id": "porcinos",
+      "nombre": "Porcinos",
+      "emoji": "🐖",
+      "vacunacion": [],
+      "enfermedades": [
+        {
+          "nombre": "Triquinosis",
+          "tipo": "Parásito (Trichinella) que pasa a las personas por comer carne mal cocida",
+          "denuncia": null,
+          "zoonosis": true,
+          "sintomas": "En el cerdo no se nota. El riesgo es para quien come la carne o los embutidos.",
+          "prevencion": "Criar y faenar con buena higiene. No dar basura ni desperdicios; controlar roedores. Analizar una muestra de carne (Técnica de Digestión Artificial) cada vez que se faena, también en carne de jabalí.",
+          "queHacer": "No consumir ni vender carne ni chacinados sin análisis.",
+          "riesgo": "Alto para la salud de las personas",
+          "fuente": {
+            "nombre": "SENASA — Pautas para la prevención de la triquinosis (02/06/2025)",
+            "url": "https://www.argentina.gob.ar/noticias/pautas-y-medidas-para-la-prevencion-de-la-triquinosis-en-la-produccion-porcina",
+            "fecha": "2025-06-02"
+          }
+        },
+        {
+          "nombre": "Enfermedad de Aujeszky (pseudorrabia)",
+          "tipo": "Enfermedad viral (herpesvirus)",
+          "denuncia": true,
+          "zoonosis": false,
+          "sintomas": "Cerdas: tos, neumonía, abortos, lechones momificados o nacidos muertos. Lechones: síntomas nerviosos, falta de coordinación, estornudos, tos y alta mortandad. Recría y engorde: fiebre, estornudos, tos y neumonía.",
+          "prevencion": "Bioseguridad, desratización y evitar el ingreso de perros, gatos y rumiantes al criadero (para ellos es mortal). No afecta a las personas; la carne es apta para consumo.",
+          "queHacer": "Ante signos compatibles, avisar de inmediato al SENASA (Res. MAGyP 474/2009).",
+          "riesgo": "Medio — de notificación obligatoria",
+          "fuente": {
+            "nombre": "SENASA — Recomendaciones para prevenir la enfermedad de Aujeszky (06/12/2023)",
+            "url": "https://www.argentina.gob.ar/noticias/recomendaciones-para-prevenir-la-enfermedad-de-aujeszky-en-la-poblacion-porcina",
+            "fecha": "2023-12-06"
+          }
+        },
+        {
+          "nombre": "Peste porcina clásica, peste porcina africana y PRRS",
+          "tipo": "Enfermedades virales AUSENTES en Argentina",
+          "denuncia": true,
+          "zoonosis": false,
+          "sintomas": "Pestes porcinas: fiebre, decaimiento, cerdos amontonados, falta de apetito, vómitos, diarrea, piel enrojecida en orejas, panza y patas, abortos y alta mortandad. PRRS: abortos, lechones nacidos muertos, orejas azuladas y problemas respiratorios.",
+          "prevencion": "No ingresar al país productos de cerdo sin control. Bioseguridad en el criadero.",
+          "queHacer": "Cualquier sospecha se avisa de inmediato al SENASA.",
+          "riesgo": "Muy alto si ingresan al país",
+          "fuente": {
+            "nombre": "SENASA — Avisá al Senasa: enfermedades porcinas (03/06/2022)",
+            "url": "https://www.argentina.gob.ar/noticias/avisa-al-senasa-como-reconocer-prevenir-y-notificar-enfermedades-porcinas",
+            "fecha": "2022-06-03"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ovinos",
+      "nombre": "Ovinos",
+      "emoji": "🐑",
+      "vacunacion": [],
+      "enfermedades": [
+        {
+          "nombre": "Sarna ovina",
+          "tipo": "Parásito externo (ácaro Psoroptes ovis)",
+          "denuncia": null,
+          "zoonosis": false,
+          "sintomas": "Rascado persistente, inquietud y pérdida de lana. Es más común en invierno pero puede aparecer todo el año.",
+          "prevencion": "Revisar la majada con frecuencia; aprovechar la esquila de cara y el preservicio para detectarla.",
+          "queHacer": "Tratar toda la majada a la vez, coordinado con los vecinos: un solo animal sin tratar reinicia la infestación. El tratamiento lo indica el veterinario.",
+          "riesgo": "Alto para la producción de lana",
+          "fuente": {
+            "nombre": "INTA/SENASA — Sarna ovina: claves para una detección temprana (05/08/2025)",
+            "url": "https://www.argentina.gob.ar/noticias/sarna-ovina-claves-para-una-deteccion-temprana-y-un-control-efectivo",
+            "fecha": "2025-08-05"
+          }
+        },
+        {
+          "nombre": "Brucelosis ovina (Brucella ovis)",
+          "tipo": "Enfermedad bacteriana",
+          "denuncia": null,
+          "zoonosis": false,
+          "sintomas": "Principal causa de problemas reproductivos en ovinos. La revisación de testículos de los carneros solo da un diagnóstico presuntivo.",
+          "prevencion": "Análisis de sangre de los carneros (IDGA, fijación de complemento o ELISA). Existe certificado de predio libre.",
+          "queHacer": "Consultar al veterinario para el plan de análisis antes del servicio.",
+          "riesgo": "Medio — presente en todo el país (3 a 50% según la zona)",
+          "fuente": {
+            "nombre": "SENASA — Brucella ovis",
+            "url": "https://www.argentina.gob.ar/senasa/programas-sanitarios/cadenaanimal/ovinos/ovinos-produccion-primaria/brucella-ovis",
+            "fecha": "2026-09-23"
+          }
+        }
+      ]
+    },
+    {
+      "id": "caprinos",
+      "nombre": "Caprinos",
+      "emoji": "🐐",
+      "vacunacion": [],
+      "enfermedades": [
+        {
+          "nombre": "Brucelosis caprina (Brucella melitensis)",
+          "tipo": "Enfermedad bacteriana transmitida por alimentos",
+          "denuncia": null,
+          "zoonosis": true,
+          "sintomas": "Problemas reproductivos y abortos en las cabras. En las personas produce una enfermedad crónica.",
+          "prevencion": "Las cabras se contagian por agua y alimento contaminados, leche materna o contacto con fluidos de animales enfermos. No consumir leche cruda ni quesos de origen dudoso.",
+          "queHacer": "Consultar al veterinario ante abortos y sanear el rebaño.",
+          "riesgo": "Alto para la salud de las personas",
+          "fuente": {
+            "nombre": "SENASA — Prevención de la brucelosis caprina (01/02/2023)",
+            "url": "https://www.argentina.gob.ar/noticias/pautas-para-la-prevencion-de-la-brucelosis-caprina-y-el-cuidado-de-la-salud-de-las-personas",
+            "fecha": "2023-02-01"
+          }
+        }
+      ]
+    },
+    {
+      "id": "aves",
+      "nombre": "Aves",
+      "emoji": "🐓",
+      "vacunacion": [],
+      "enfermedades": [
+        {
+          "nombre": "Influenza aviar",
+          "tipo": "Enfermedad viral muy contagiosa",
+          "denuncia": true,
+          "zoonosis": true,
+          "sintomas": "Falta de apetito y descoordinación, plumas erizadas, respiración dificultosa con moco, diarrea, menos huevos o con cáscara blanda o deforme, cabeza hinchada, cresta, barbillas y patas azuladas, aves caídas y muertas. La forma grave puede matar al 90-100% del lote.",
+          "prevencion": "Aves en lugar protegido y sin contacto con aves silvestres. Proteger agua y alimento. Limpiar y desinfectar el gallinero. Controlar el ingreso de personas, herramientas y vehículos. Lavarse las manos después de manipular aves.",
+          "queHacer": "Ante mortandad o signos compatibles, avisar de inmediato al SENASA. No mover aves ni huevos.",
+          "riesgo": "Muy alto — de notificación inmediata al SENASA",
+          "fuente": {
+            "nombre": "SENASA — Influenza aviar",
+            "url": "https://www.argentina.gob.ar/senasa/influenza-aviar",
+            "fecha": "2026-09-23"
+          }
+        }
+      ]
+    }
+  ]
+}
