@@ -1,0 +1,12 @@
+.input { width: 100%; min-height: 2.8rem; font-size: 1rem; padding: .4rem .6rem; border: 2px solid var(--navy); border-radius: var(--radius); background: #fff; font-family: inherit; }
+.admin-form { display: grid; gap: .7rem; }
+.admin-form label { font-weight: 700; display: grid; gap: .25rem; }
+.admin-form fieldset { border: 1px solid var(--line); border-radius: var(--radius); display: grid; gap: .6rem; }
+.admin-actions { display: flex; gap: .6rem; flex-wrap: wrap; }
+.admin-actions .btn { width: auto; }
+.admin-table td, .admin-table th { font-size: .85rem; }
+.admin-table button { min-height: 2.4rem; padding: .2rem .6rem; margin: .15rem 0; border: 2px solid var(--navy); background: var(--card); color: var(--navy); border-radius: var(--radius); font-weight: 700; cursor: pointer; font-size: .85rem; }
+.admin-table input { width: 5.5rem; min-height: 2.4rem; border: 1px solid var(--navy); border-radius: 4px; padding: .2rem .3rem; }
+.ok-cell { color: var(--green); font-weight: 800; }
+.err-cell { color: var(--red); font-weight: 800; }
+.logs { max-height: 420px; overflow: auto; background: #111; color: #e8e8e8; padding: .7rem; font-size: .78rem; border-radius: var(--radius); white-space: pre-wrap; }
