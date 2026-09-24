@@ -92,6 +92,7 @@
   function rainTxt(day) {
     if (!day) return '—';
     const p = day.rainProbMax;
+    if ((p === null || p === undefined) && day.rainMm !== null && day.rainMm !== undefined) return `${num(day.rainMm, 1)} mm`;
     if (p === null || p === undefined) return '—';
     if (p === 0) return 'Sin lluvia prevista';
     return `${p}% de probabilidad${day.rainMm ? ` · ${num(day.rainMm, 1)} mm` : ''}`;
