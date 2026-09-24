@@ -15,6 +15,8 @@ import { startScheduler, initSources } from './scheduler.js';
 import { track, statsSummary } from './stats.js';
 
 const PUBLIC = resolve(ROOT, 'public');
+// Versión del programa: el ícono del Escritorio la compara con el archivo VERSION y, si cambió, reinicia el servidor.
+const VERSION = existsSync(resolve(ROOT, 'VERSION')) ? readFileSync(resolve(ROOT, 'VERSION'), 'utf8').trim() : 'dev';
 const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon', '.webmanifest': 'application/manifest+json', '.txt': 'text/plain; charset=utf-8' };
 const SECURITY = {
   'Content-Security-Policy': "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
@@ -71,7 +73,7 @@ async function handle(req, res) {
   const q = Object.fromEntries(url.searchParams);
   const send = (s, o, h) => sendJson(req, res, s, o, h);
 
-  if (path === '/salud') return send(200, { ok: true, time: new Date().toISOString() });
+  if (path === '/salud') return send(200, { ok: true, version: VERSION, time: new Date().toISOString() });
 
   if (path.startsWith('/api/')) {
     try {
@@ -83,23 +85,14 @@ async function handle(req, res) {
         if (path === '/api/inicio') return send(200, api.inicio(q.loc));
         if (path === '/api/clima') return send(200, api.clima(q.loc));
         if (path === '/api/alertas') return send(200, api.alertas(q.loc));
-        if (path === '/api/precios') return send(200, api.precios());
-        if (path === '/api/noticias') return send(200, api.noticias({ cat: q.cat, limit: q.limit, source: q.fuente }));
-        if (path === '/api/sanidad') return send(200, api.sanidad());
-        if (path.startsWith('/api/sanidad/')) {
-          const e = api.especie(path.split('/').pop());
-          return e ? send(200, e) : send(404, { error: 'Especie no encontrada' });
-        }
+        if (path === '/api/mercado' || path === '/api/precios') return send(200, api.mercado());
+        if (path === '/api/dolar') return send(200, api.dolar());
+        if (path === '/api/fijados') return send(200, api.fijados());
+        if (path === '/api/rios') return send(200, api.rios());
+        if (path === '/api/sanitarias') return send(200, api.sanitarias());
+        if (path === '/api/noticias') return send(200, api.noticias({ zone: q.zona, limit: q.limit }));
         if (path === '/api/cultivos') return send(200, api.cultivos());
         if (path === '/api/fuentes') return send(200, api.fuentes());
-        if (path === '/api/medicamentos') {
-          try {
-            return send(200, await api.medicamentos(q.q || '', q.especie || ''));
-          } catch (e) {
-            log('warn', 'vademecum', e.message);
-            return send(503, { error: 'No pudimos consultar el registro oficial del SENASA en este momento. Probá de nuevo en unos minutos.', vademecumUrl: 'https://aps2.senasa.gov.ar/vademecumVet/app/publico/farmacos' });
-          }
-        }
         if (path === '/api/admin/sesion') return send(200, { admin: isAdmin(req), enabled: adminEnabled() });
       }
 

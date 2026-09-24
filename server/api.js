@@ -1,29 +1,28 @@
-// Endpoints públicos de la API (solo lectura desde la base local: el usuario nunca espera a una fuente externa,
-// salvo el buscador de medicamentos que consulta el registro del SENASA con caché).
+// Endpoints públicos de la API (solo lectura desde la base local: el usuario nunca espera a una fuente externa).
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { ROOT } from './config.js';
 import { currentRegion, findLocality, nearestStation } from './regions/index.js';
 import { getSnapshot, listNews, listManual, getSetting, allSourceStates } from './db.js';
 import { meta } from './lib/meta.js';
-import { NEWS_CATEGORIES } from './lib/news-classify.js';
+import { NEWS_CATEGORIES, NEWS_ZONES, relevance, dedupeKey } from './lib/news-classify.js';
+import { computeAvisos, CRITERIOS } from './lib/avisos.js';
 import { SOURCES } from './sources/index.js';
 import { FEEDS } from './sources/noticias.js';
-import { searchMedicamentos, VADEMECUM_URL } from './services/vademecum.js';
+import { PAGE_INMAG, PAGE_IGMAG } from './sources/mag-indices.js';
+import { PAGE_ROSGAN } from './sources/rosgan.js';
+import { URL_ALTURAS } from './sources/prefectura-rios.js';
 import { normalize } from './lib/text.js';
 
 const loadJson = (p) => JSON.parse(readFileSync(resolve(ROOT, p), 'utf8'));
-let ANIMALES = loadJson('content/animales.json');
 let CULTIVOS = loadJson('content/cultivos.json');
 export function reloadContent() {
-  ANIMALES = loadJson('content/animales.json');
   CULTIVOS = loadJson('content/cultivos.json');
 }
 
 const FRESH_OBS_MIN = 180;
+const NEAR_STATION_KM = 40; // más lejos que esto, la estación del SMN no representa "lo que pasa ahora" en la localidad
 const isFresh = (iso, min) => iso && Date.now() - Date.parse(iso) < min * 60e3;
-
-export const DISCLAIMER_VET = 'La información de esta sección es orientativa y no reemplaza la evaluación de un veterinario.';
 
 // ------------------------------------------------------------------ CLIMA
 export function clima(locId) {
@@ -35,15 +34,20 @@ export function clima(locId) {
   const sModel = getSnapshot('smn-modelo', station.id);
   const sOm = getSnapshot('open-meteo', loc.id);
 
-  // Estado actual: 1) SMN estación más cercana vía servicio del SMN, 2) datos abiertos SMN, 3) modelo Open-Meteo.
+  // Estado actual: 1) SMN (servicio por localidad), 2) datos abiertos SMN si la estación está cerca (≤ 40 km),
+  // 3) modelo Open-Meteo en el punto exacto de la localidad. Si la estación está lejos (ej. Gualeguay: la más
+  // cercana es Gualeguaychú, a unos 70 km), se muestra el modelo y, aparte, la observación oficial más cercana.
+  const obsFresh = sObs && isFresh(sObs.data.observedAt, FRESH_OBS_MIN) ? sObs.data : null;
   let current = null;
   if (sNow && isFresh(sNow.data.observedAt, FRESH_OBS_MIN)) {
     current = { ...sNow.data, origin: 'smn', originLabel: `Observado por el SMN${sNow.data.distanceKm ? ` (estación a ${Math.round(sNow.data.distanceKm)} km)` : ''}` };
-  } else if (sObs && isFresh(sObs.data.observedAt, FRESH_OBS_MIN)) {
-    current = { ...sObs.data, origin: 'smn-abiertos', originLabel: `Observado por el SMN en ${sObs.data.station} (a ${station.km} km)` };
+  } else if (obsFresh && station.km <= NEAR_STATION_KM) {
+    current = { ...obsFresh, origin: 'smn-abiertos', originLabel: `Observado por el SMN en ${obsFresh.station}${station.km > 5 ? ` (a ${station.km} km)` : ''}` };
   } else if (sOm) {
-    current = { ...sOm.data.current, origin: 'modelo', originLabel: 'Estimado por modelo (Open-Meteo). No es una medición.' };
+    current = { ...sOm.data.current, origin: 'modelo', originLabel: `Estimado por modelo (Open-Meteo) para ${loc.name}. No es una medición.` };
   }
+  const nearestObs = obsFresh && current?.origin === 'modelo' ? { station: obsFresh.station, km: station.km, temp: obsFresh.temp, weather: obsFresh.weather, observedAt: obsFresh.observedAt } : null;
+  const avisos = computeAvisos({ om: sOm?.data, obs: obsFresh && station.km <= NEAR_STATION_KM ? obsFresh : null, obsKm: station.km });
   if (current) {
     const om = sOm?.data?.current;
     current.estimated = {};
@@ -75,6 +79,9 @@ export function clima(locId) {
     locality: loc,
     station: { name: station.obsName, km: station.km },
     current,
+    nearestObs,
+    avisos,
+    criterios: CRITERIOS,
     forecastOrigin,
     days,
     modelStation: sModel ? { name: station.obsName, days: sModel.data.days, file: sModel.data.file } : null,
@@ -116,6 +123,10 @@ export function alertas(locId) {
       manual: listManual('alerta_meteo'),
       officialUrl: 'https://www.smn.gob.ar/alertas',
       meta: meta('smn-cap', cap),
+      avisos: clima(loc.id).avisos,
+      criterios: CRITERIOS,
+      metaModelo: meta('open-meteo', getSnapshot('open-meteo', loc.id)),
+      sanitarias: sanitarias(),
       noAlertsText: 'No hay alertas meteorológicas activas para esta zona.',
     };
   }
@@ -143,112 +154,206 @@ export function alertas(locId) {
     manual: listManual('alerta_meteo'),
     officialUrl: 'https://www.smn.gob.ar/alertas',
     meta: meta('smn-alertas', snap),
+    avisos: clima(loc.id).avisos,
+    criterios: CRITERIOS,
+    metaModelo: meta('open-meteo', getSnapshot('open-meteo', loc.id)),
+    sanitarias: sanitarias(),
     noAlertsText: 'No hay alertas meteorológicas activas para esta zona.',
   };
 }
 
-// ------------------------------------------------------------------ PRECIOS
-export function precios() {
+// ------------------------------------------------------------------ utilidades de precios
+const variation = (cur, prev) => {
+  if (!prev || prev.value === null || prev.value === undefined || !prev.value || cur === null || cur === undefined) return null;
+  return { pct: Math.round(((cur - prev.value) / prev.value) * 1000) / 10, previous: prev.value, previousDate: prev.date };
+};
+const daysOld = (iso) => (iso ? Math.floor((Date.now() - Date.parse(iso.length === 10 ? iso + 'T12:00:00-03:00' : iso)) / 864e5) : null);
+
+// ------------------------------------------------------------------ MERCADO (hacienda, granos, arroz)
+function haciendaFijada() {
+  const idx = getSnapshot('mag-indices', 'ultimos');
+  const mag = getSnapshot('mag-canuelas', 'ultimo');
+  const ros = getSnapshot('rosgan', 'ultimo');
+  const inmag = idx?.data?.inmag || [];
+  const igmag = idx?.data?.igmag || [];
+
+  let novillo = null;
+  if (inmag.length) {
+    const l = inmag[inmag.length - 1];
+    const p = inmag[inmag.length - 2];
+    novillo = { value: l.value, unit: '$ por kg vivo', date: l.date, variation: variation(l.value, p), market: 'Mercado Agroganadero de Cañuelas', index: 'INMAG (Índice Novillo del Mercado)', url: PAGE_INMAG, fetchedAt: idx.fetchedAt, heads: l.heads };
+  } else {
+    const g = mag?.data?.groups?.find((x) => x.group === 'NOVILLOS');
+    if (g) novillo = { value: g.avg, unit: '$ por kg vivo', date: mag.data.date, variation: variation(g.avg, g.previous), market: 'Mercado Agroganadero de Cañuelas', index: 'Promedio ponderado de Novillos', url: mag ? 'https://www.mercadoagroganadero.com.ar/dll/hacienda1.dll/haciinfo000002' : null, fetchedAt: mag.fetchedAt, heads: g.heads };
+  }
+  const gv = mag?.data?.groups?.find((x) => x.group === 'VACAS');
+  const vaca = gv ? { value: gv.avg, unit: '$ por kg vivo', date: mag.data.date, variation: variation(gv.avg, gv.previous), market: 'Mercado Agroganadero de Cañuelas', index: 'Promedio ponderado de todas las Vacas', status: mag.data.status, url: 'https://www.mercadoagroganadero.com.ar/dll/hacienda1.dll/haciinfo000002', fetchedAt: mag.fetchedAt, heads: gv.heads } : null;
+  const rl = ros?.data?.latest;
+  const ternero = rl?.indiceTernero ? { value: rl.indiceTernero, unit: '$ por kg vivo', date: rl.date, variation: variation(rl.indiceTernero, ros.data.previous ? { value: ros.data.previous.indiceTernero, date: ros.data.previous.date } : null), market: 'ROSGAN (Mercado Ganadero de Rosario)', index: 'Índice Ternero ROSGAN (remate mensual)', monthly: true, url: PAGE_ROSGAN, fetchedAt: ros.fetchedAt } : null;
+  let enPie = null;
+  if (igmag.length) {
+    const l = igmag[igmag.length - 1];
+    enPie = { value: l.value, unit: '$ por kg vivo', date: l.date, variation: variation(l.value, igmag[igmag.length - 2]), market: 'Mercado Agroganadero de Cañuelas', index: 'IGMAG (Índice General del Mercado: todas las categorías)', url: PAGE_IGMAG, fetchedAt: idx.fetchedAt, heads: l.heads, history: igmag.slice(-6) };
+  } else if (mag?.data?.general) {
+    enPie = { value: mag.data.general.avg, unit: '$ por kg vivo', date: mag.data.date, variation: null, market: 'Mercado Agroganadero de Cañuelas', index: 'Promedio general del día', url: 'https://www.mercadoagroganadero.com.ar/dll/hacienda1.dll/haciinfo000002', fetchedAt: mag.fetchedAt, heads: mag.data.general.heads };
+  }
+  for (const x of [novillo, vaca, ternero, enPie]) if (x) { x.daysOld = daysOld(x.date); x.stale = x.monthly ? x.daysOld > 45 : x.daysOld > 6; }
+  return {
+    novillo, vaca, ternero, enPie,
+    meta: { indices: meta('mag-indices', idx), canuelas: meta('mag-canuelas', mag), rosgan: meta('rosgan', ros) },
+  };
+}
+
+export function mercado() {
   const bcr = getSnapshot('bcr-pizarra', 'rosario');
   const mag = getSnapshot('mag-canuelas', 'ultimo');
   const arroz = getSnapshot('magyp-arroz', 'mensual');
+  const ros = getSnapshot('rosgan', 'ultimo');
+  const fij = haciendaFijada();
   return {
+    fijados: { novillo: fij.novillo, vaca: fij.vaca, ternero: fij.ternero },
+    enPie: fij.enPie,
+    canuelas: mag ? { date: mag.data.date, status: mag.data.status, groups: mag.data.groups, general: mag.data.general, categories: mag.data.rows, note: mag.data.note } : null,
+    invernada: ros?.data?.latest || null,
     granos: bcr ? bcr.data : null,
-    hacienda: mag ? { ...mag.data, rows: undefined, categories: mag.data.rows } : null,
     arroz: arroz ? arroz.data : null,
     manual: listManual('precio'),
     pendientes: [
-      { producto: 'Carne porcina (capón)', motivo: 'La Secretaría de Agricultura publica el precio semanal solo en PDF. Se muestra el enlace oficial; el administrador puede cargarlo a mano.', url: 'https://www.magyp.gob.ar/sitio/areas/porcinos/informes/' },
-      { producto: 'Precios regionales de Entre Ríos', motivo: 'La Bolsa de Cereales de Entre Ríos no publica una pizarra diaria abierta. Se muestran sus informes en Noticias.', url: 'https://bolsacer.org.ar/site/siber/' },
+      { producto: 'Precio de granos puesto en Entre Ríos', motivo: 'La Bolsa de Cereales de Entre Ríos no publica una pizarra diaria en formato abierto. Se muestra la pizarra de Rosario, que es la referencia: el precio en tu zona se calcula descontando flete y gastos.', url: 'https://bolsacer.org.ar/site/siber/' },
+      { producto: 'Carne porcina (capón)', motivo: 'La Secretaría de Agricultura publica el precio semanal solo en PDF.', url: 'https://www.magyp.gob.ar/sitio/areas/porcinos/informes/' },
     ],
-    meta: { granos: meta('bcr-pizarra', bcr), hacienda: meta('mag-canuelas', mag), arroz: meta('magyp-arroz', arroz) },
+    meta: { granos: meta('bcr-pizarra', bcr), hacienda: meta('mag-canuelas', mag), arroz: meta('magyp-arroz', arroz), ...fij.meta },
+  };
+}
+
+// ------------------------------------------------------------------ DÓLAR
+export function dolar() {
+  const s = getSnapshot('dolar', 'ultimo');
+  const d = s?.data || {};
+  return { oficial: d.oficial || null, mayorista: d.mayorista || null, blue: d.blue || null, meta: meta('dolar', s), fetchedAt: s?.fetchedAt || null };
+}
+
+// ------------------------------------------------------------------ RÍOS
+export function rios() {
+  const s = getSnapshot('prefectura-rios', 'entre-rios');
+  const stations = (s?.data?.stations || []).map((r) => ({ ...r, hoursOld: r.at ? Math.round((Date.now() - Date.parse(r.at)) / 36e5) : null }))
+    .map((r) => ({ ...r, stale: r.hoursOld === null || r.hoursOld > 36 }));
+  return {
+    main: stations.find((r) => r.main) || null,
+    stations,
+    url: URL_ALTURAS,
+    nota: 'Alturas en metros según el hidrómetro de cada puerto (no es la profundidad del río). Prefectura publica una lectura cada 12 horas aproximadamente. «Alerta» y «Evacuación» son los niveles de referencia que publica Prefectura para cada puerto.',
+    meta: meta('prefectura-rios', s),
+  };
+}
+
+// ------------------------------------------------------------------ ALERTAS SANITARIAS (SENASA)
+const PROVINCES = ['Buenos Aires', 'Catamarca', 'Chaco', 'Chubut', 'Córdoba', 'Corrientes', 'Entre Ríos', 'Formosa', 'Jujuy', 'La Pampa', 'La Rioja', 'Mendoza', 'Misiones', 'Neuquén', 'Río Negro', 'Salta', 'San Juan', 'San Luis', 'Santa Cruz', 'Santa Fe', 'Santiago del Estero', 'Tierra del Fuego', 'Tucumán'];
+const OUTBREAK = /(?:^|[^a-z])(?:brotes?|focos?|casos?|detect|confirm|emergencia|sospech|positiv|cuarentena|interdic)/;
+const STATUS = /(?:restituy|recuper|libre de|estatus|levant)/;
+const PHYTO = /(?:plaga|chicharrita|langosta|hlb|cancrosis|mosca de los frutos|picudo|lobesia|fitosanit)/;
+const ANIMAL_DISEASE = /(?:influenza aviar|gripe aviar|aftosa|newcastle|peste porcina|brucelosis|tuberculosis|encefalomielitis|anemia infecciosa|rabia|carbunclo|triquinosis|leptospirosis|sarna|garrapata|enfermedad)/;
+
+export function sanitarias() {
+  const region = currentRegion();
+  const epi = getSnapshot('senasa-epidemiologia', 'lista');
+  const cutoff = new Date(Date.now() - 150 * 864e5).toISOString().slice(0, 10);
+  const fromNews = listNews({ limit: 120, sources: ['senasa'] }).map((n) => ({ date: n.published_at?.slice(0, 10), title: n.title, summary: n.summary, url: n.url, fuente: 'SENASA — Comunicados' }));
+  const fromEpi = (epi?.data?.items || []).map((i) => ({ ...i, fuente: 'SENASA — Situación epidemiológica' }));
+  const seen = new Set();
+  const out = [];
+  for (const i of [...fromEpi, ...fromNews]) {
+    if (!i.url || seen.has(i.url) || !i.date || i.date < cutoff) continue;
+    const t = ' ' + normalize(`${i.title} ${i.summary || ''}`) + ' ';
+    const isOutbreak = OUTBREAK.test(t) && (ANIMAL_DISEASE.test(t) || PHYTO.test(t));
+    const isStatus = STATUS.test(t) && (ANIMAL_DISEASE.test(t) || PHYTO.test(t));
+    if (i.fuente.includes('Comunicados') && !isOutbreak && !isStatus) continue; // de los comunicados generales, solo alertas reales
+    seen.add(i.url);
+    const tt = normalize(i.title);
+    const prefix = (i.title.match(/^([A-ZÁÉÍÓÚ][^:]{2,30}):/) || [])[1];
+    const prov = PROVINCES.find((p) => (prefix && normalize(prefix) === normalize(p)) || tt.includes(normalize(p)));
+    const deps = region.departments.filter((d) => normalize(d).length > 5 && tt.includes(normalize(d)));
+    const enER = prov === 'Entre Ríos' || /entre rios|entrerrian/.test(t) || deps.length > 0;
+    const zona = enER ? `Entre Ríos${deps.length ? ' — departamento ' + deps.join(', ') : ''}` : prov ? `Provincia de ${prov}` : 'Argentina (alcance nacional)';
+    let importancia;
+    if (enER && isOutbreak) importancia = { nivel: 'alta', texto: 'ALTA — afecta a Entre Ríos' };
+    else if (isOutbreak && !prov) importancia = { nivel: 'alta', texto: 'ALTA — alcance nacional' };
+    else if (isOutbreak) importancia = { nivel: 'media', texto: 'MEDIA — caso en otra provincia (vigilancia)' };
+    else importancia = { nivel: 'info', texto: 'INFORMATIVA — cambio de estatus sanitario' };
+    const tipo = PHYTO.test(t) ? 'Fitosanitaria (cultivos)' : 'Animales de producción';
+    out.push({ que: i.title, detalle: i.summary || null, zona, fecha: i.date, importancia, tipo, fuente: i.fuente, url: i.url, enER });
+  }
+  const rank = { alta: 0, media: 1, info: 2 };
+  out.sort((a, b) => (b.enER - a.enER) || rank[a.importancia.nivel] - rank[b.importancia.nivel] || b.fecha.localeCompare(a.fecha));
+  const manual = listManual('alerta_sanitaria').map((m) => ({ que: m.title, detalle: m.body, zona: 'Entre Ríos', fecha: m.content_date, importancia: { nivel: 'alta', texto: 'Aviso cargado por la administración' }, fuente: m.source_name, url: m.url, enER: true, manual: true }));
+  return {
+    items: [...manual, ...out].slice(0, 12),
+    enER: [...manual, ...out].filter((x) => x.enER).length,
+    vacioTexto: 'No hay alertas sanitarias oficiales recientes del SENASA para Entre Ríos.',
+    criterio: 'Solo se muestran comunicados oficiales del SENASA de los últimos 5 meses sobre brotes, detecciones, emergencias o cambios de estatus sanitario (animales de producción y plagas de cultivos). Primero lo que afecta a Entre Ríos.',
+    meta: meta('senasa-epidemiologia', epi),
+    metaNoticias: meta('noticias', null),
   };
 }
 
 // ------------------------------------------------------------------ NOTICIAS
-export function noticias({ cat = null, limit = 30, source = null } = {}) {
-  const items = listNews({ category: cat || null, limit: Math.min(Number(limit) || 30, 60), sources: source ? [source] : null }).map((n) => ({
-    id: n.id, title: n.title, url: n.url, summary: n.summary, publishedAt: n.published_at, source: n.source, sourceName: n.source_name,
-    categories: (n.category || '').split(',').filter(Boolean), manual: !!n.manual, pinned: !!n.pinned,
-  }));
-  return { categories: NEWS_CATEGORIES, items, meta: meta('noticias', items.length ? { fetchedAt: getSnapshotTime('noticias') } : null) };
-}
-function getSnapshotTime(id) {
-  const st = allSourceStates().find((s) => s.id === id);
-  return st?.last_success_at || null;
-}
-
-// ------------------------------------------------------------------ SANIDAD
-const SANITARY_WORDS = ['brote', 'foco', 'caso', 'detect', 'alerta', 'emergencia', 'confirm', 'positivo'];
-export function sanidad() {
+const ZONE_RANK = { local: 0, departamentos: 1, provincia: 2, nacional: 3 };
+export function noticias({ zone = null, limit = 40 } = {}) {
   const region = currentRegion();
-  const epi = getSnapshot('senasa-epidemiologia', 'lista');
-  const senasaNews = listNews({ limit: 60, sources: ['senasa'] })
-    .filter((n) => SANITARY_WORDS.some((w) => normalize(n.title).includes(w)))
-    .map((n) => ({ date: n.published_at?.slice(0, 10), title: n.title, url: n.url, origin: 'SENASA Comunica' }));
-  const epiItems = (epi?.data?.items || []).map((i) => ({ ...i, origin: 'SENASA — Situación epidemiológica' }));
+  const feeds = Object.fromEntries(FEEDS.map((f) => [f.id, f]));
+  const cutoff = new Date(Date.now() - 30 * 864e5).toISOString();
   const seen = new Set();
-  const all = [...epiItems, ...senasaNews].filter((i) => (seen.has(i.url) ? false : seen.add(i.url))).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-
-  // Agrupación geográfica honesta: solo si el texto oficial nombra la provincia o un departamento.
-  const deptNorm = region.departments.map((d) => [d, normalize(d)]);
-  for (const i of all) {
-    const t = normalize(i.title);
-    i.province = t.includes('entre rios') ? region.name : null;
-    i.departments = deptNorm.filter(([, n]) => n.length > 5 && t.includes(n)).map(([d]) => d);
+  const items = [];
+  for (const n of listNews({ limit: 600 })) {
+    if (!n.manual && !n.pinned && (!n.published_at || n.published_at < cutoff)) continue;
+    const rel = n.manual || n.pinned ? { ok: true, zone: 'provincia' } : relevance({ title: n.title, summary: n.summary, url: n.url }, feeds[n.source] || { id: n.source }, region);
+    if (!rel.ok) continue;
+    const key = dedupeKey(n.title);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    items.push({ id: n.id, title: n.title, url: n.url, summary: n.summary, publishedAt: n.published_at, source: n.source, sourceName: n.source_name, zone: rel.zone, manual: !!n.manual, pinned: !!n.pinned });
   }
+  items.sort((a, b) => (b.pinned - a.pinned) || ZONE_RANK[a.zone] - ZONE_RANK[b.zone] || (b.publishedAt || '').localeCompare(a.publishedAt || ''));
+  const filtered = zone ? items.filter((i) => i.zone === zone) : items;
+  const st = allSourceStates().find((s) => s.id === 'noticias');
   return {
-    especies: ANIMALES.especies.map((e) => ({ id: e.id, nombre: e.nombre, emoji: e.emoji, count: e.enfermedades.length })),
-    alertas: all.slice(0, 25),
-    enProvincia: all.filter((i) => i.province || i.departments.length),
-    manual: listManual('alerta_sanitaria'),
-    avisoSenasa: ANIMALES.avisoSenasa,
-    disclaimer: DISCLAIMER_VET,
-    meta: meta('senasa-epidemiologia', epi),
-    mapaNota: 'No existen datos públicos oficiales con ubicación exacta de brotes. Por eso no se dibujan puntos en un mapa: se muestran los comunicados oficiales y, cuando el texto oficial menciona Entre Ríos o un departamento, se agrupan por zona.',
+    zones: NEWS_ZONES,
+    items: filtered.slice(0, Math.min(Number(limit) || 40, 80)),
+    vacioTexto: 'No hay novedades importantes para el campo de Entre Ríos en este momento.',
+    criterio: 'Primero Gualeguay y la zona, después los departamentos de Entre Ríos, la provincia, y lo nacional solo si impacta al productor entrerriano (retenciones, sanidad, mercados, campaña). No se muestran espectáculos, deportes, curiosidades ni noticias de otras provincias. Últimos 30 días.',
+    meta: meta('noticias', st?.last_success_at ? { fetchedAt: st.last_success_at } : null),
   };
 }
 
-export function especie(id) {
-  const e = ANIMALES.especies.find((x) => x.id === id);
-  if (!e) return null;
-  return { ...e, cuandoLlamarVeterinario: ANIMALES.cuandoLlamarVeterinario, cuandoLlamarFuente: ANIMALES.cuandoLlamarFuente, avisoSenasa: ANIMALES.avisoSenasa, disclaimer: DISCLAIMER_VET, revisado: ANIMALES.revisado };
+// Para la portada: pocas y bien elegidas (últimos 10 días).
+function noticiasPortada() {
+  const n = noticias({ limit: 80 });
+  const cutoff = new Date(Date.now() - 10 * 864e5).toISOString();
+  return { items: n.items.filter((i) => i.pinned || (i.publishedAt || '') >= cutoff).slice(0, 5), vacioTexto: n.vacioTexto, meta: n.meta };
 }
 
 export function cultivos() {
   return CULTIVOS;
 }
 
-// ------------------------------------------------------------------ MEDICAMENTOS
-export async function medicamentos(q, especieId) {
-  const r = await searchMedicamentos({ q, especie: especieId });
-  return { ...r, disclaimer: DISCLAIMER_VET, vademecumUrl: VADEMECUM_URL };
-}
-
-// ------------------------------------------------------------------ INICIO
+// ------------------------------------------------------------------ INICIO (orden pedido por el productor)
 export function inicio(locId) {
   const c = clima(locId);
   const a = alertas(locId);
-  const p = precios();
-  const n = noticias({ limit: 12 });
-  const s = sanidad();
-  const pick = (k) => p.granos?.boards?.find((b) => b.key === k) || null;
-  const erNews = n.items.filter((i) => i.categories.includes('entre-rios'));
-  const topNews = [...erNews.slice(0, 2), ...n.items.filter((i) => !erNews.includes(i))].slice(0, 4);
+  const m = mercado();
+  const pick = (k) => m.granos?.boards?.find((b) => b.key === k) || null;
+  const r = rios();
   return {
     locality: c.locality,
-    clima: { current: c.current, today: c.days[0] || null, tomorrow: c.days[1] || null, meta: c.meta.pronostico, forecastOrigin: c.forecastOrigin },
-    alertas: { count: a.alerts.length, top: a.alerts.slice(0, 2), shortTerm: a.shortTerm, meta: a.meta, noAlertsText: a.noAlertsText },
-    precios: {
-      granos: ['soja', 'maiz', 'trigo', 'girasol', 'sorgo'].map(pick).filter(Boolean),
-      granosFecha: p.granos?.date || null,
-      novillos: p.hacienda?.groups?.find((g) => g.group === 'NOVILLOS') || null,
-      haciendaFecha: p.hacienda?.date || null,
-      arroz: p.arroz?.latest || null,
-      meta: p.meta,
-    },
-    sanidad: { ultima: s.enProvincia[0] || s.alertas[0] || null, enProvincia: s.enProvincia.slice(0, 2) },
-    noticias: topNews,
+    clima: { current: c.current, nearestObs: c.nearestObs, today: c.days[0] || null, tomorrow: c.days[1] || null, meta: c.meta.actual, metaPronostico: c.meta.pronostico, forecastOrigin: c.forecastOrigin },
+    avisos: c.avisos,
+    alertas: { count: a.alerts.length, top: a.alerts.slice(0, 2), meta: a.meta, noAlertsText: a.noAlertsText },
+    sanitarias: { top: a.sanitarias.items.filter((x) => x.enER || x.importancia.nivel === 'alta').slice(0, 2), enER: a.sanitarias.enER, vacioTexto: a.sanitarias.vacioTexto, meta: a.sanitarias.meta },
+    hacienda: { ...m.fijados, enPie: m.enPie, meta: { indices: m.meta.indices, canuelas: m.meta.canuelas, rosgan: m.meta.rosgan } },
+    granos: { items: ['soja', 'maiz', 'trigo', 'girasol', 'sorgo'].map(pick).filter(Boolean), date: m.granos?.date || null, arroz: m.arroz?.latest || null, meta: m.meta.granos, metaArroz: m.meta.arroz },
+    dolar: dolar(),
+    rio: { main: r.main, meta: r.meta },
+    noticias: noticiasPortada(),
   };
 }
 
@@ -262,14 +367,12 @@ export function fuentes() {
       ultimaActualizacion: states[s.id]?.last_success_at || null,
       conProblemas: !!(states[s.id]?.last_error_at && (!states[s.id]?.last_success_at || states[s.id].last_error_at > states[s.id].last_success_at)),
     })),
-    noticias: FEEDS.map((f) => ({ nombre: f.name, url: f.url, oficial: f.official })),
+    noticias: FEEDS.map((f) => ({ nombre: f.name, url: f.site || f.url, oficial: f.official })),
     contenido: [
-      { nombre: 'SENASA — Programas sanitarios y comunicados', url: 'https://www.argentina.gob.ar/senasa', uso: 'Sanidad animal, vacunación, enfermedades' },
-      { nombre: 'SENASA — Registro de Productos Veterinarios (Vademécum)', url: VADEMECUM_URL, uso: 'Buscador de medicamentos (consulta en vivo)' },
+      { nombre: 'SENASA — Situación epidemiológica y comunicados', url: 'https://www.argentina.gob.ar/senasa/situacion-epidemiologica', uso: 'Alertas sanitarias oficiales (brotes, emergencias, estatus)' },
       { nombre: 'SINAVIMO — Sistema Nacional de Vigilancia y Monitoreo de Plagas (SENASA)', url: 'https://www.sinavimo.gob.ar/', uso: 'Fichas de plagas y enfermedades de cultivos' },
-      { nombre: 'INTA', url: 'https://www.argentina.gob.ar/inta', uso: 'Recomendaciones técnicas y noticias' },
     ],
-    revisionContenido: { animales: ANIMALES.revisado, cultivos: CULTIVOS.revisado },
+    revisionContenido: { cultivos: CULTIVOS.revisado },
   };
 }
 
@@ -280,6 +383,12 @@ export function metaInfo() {
     localities: r.localities.map((l) => ({ id: l.id, name: l.name, department: l.department })),
     defaultLocality: r.defaultLocality,
     newsCategories: NEWS_CATEGORIES,
-    especies: ANIMALES.especies.map((e) => ({ id: e.id, nombre: e.nombre, emoji: e.emoji })),
   };
+}
+
+// Novillo / vaca / ternero para la franja fija que se ve en todas las páginas.
+export function fijados() {
+  const f = haciendaFijada();
+  const slim = (x) => x && { value: x.value, unit: x.unit, date: x.date, variation: x.variation, market: x.market, stale: x.stale, monthly: !!x.monthly };
+  return { novillo: slim(f.novillo), vaca: slim(f.vaca), ternero: slim(f.ternero) };
 }

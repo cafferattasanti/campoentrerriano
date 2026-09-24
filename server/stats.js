@@ -26,7 +26,7 @@ function salt(day) {
 }
 
 // Secciones que interesan a un auspiciante (qué mira la gente).
-const SECTIONS = { '/api/inicio': 'inicio', '/api/clima': 'clima', '/api/alertas': 'alertas', '/api/precios': 'precios', '/api/sanidad': 'sanidad', '/api/medicamentos': 'medicamentos', '/api/cultivos': 'cultivos', '/api/noticias': 'noticias' };
+const SECTIONS = { '/api/inicio': 'inicio', '/api/clima': 'clima', '/api/alertas': 'alertas', '/api/mercado': 'mercado', '/api/dolar': 'dolar', '/api/rios': 'rios', '/api/sanitarias': 'sanitarias', '/api/cultivos': 'cultivos', '/api/noticias': 'noticias' };
 
 export function track(req, path, ip) {
   try {
@@ -41,7 +41,7 @@ export function track(req, path, ip) {
       if (/Android|iPhone|iPad|Mobile/i.test(ua)) stInc.run(day, 'celular');
       return;
     }
-    const sec = SECTIONS[path] || (path.startsWith('/api/sanidad/') ? 'sanidad' : null);
+    const sec = SECTIONS[path] || null;
     if (sec) stInc.run(day, 'sec:' + sec);
   } catch { /* el contador nunca debe romper la página */ }
 }
