@@ -92,7 +92,7 @@
   function rainTxt(day) {
     if (!day) return '—';
     const p = day.rainProbMax;
-    if ((p === null || p === undefined) && day.rainMm !== null && day.rainMm !== undefined) return `${num(day.rainMm, 1)} mm`;
+    if ((p === null || p === undefined) && day.rainMm !== null && day.rainMm !== undefined) return day.rainMm < 0.1 ? 'Sin lluvia prevista' : `${num(day.rainMm, 1)} mm`;
     if (p === null || p === undefined) return '—';
     if (p === 0) return 'Sin lluvia prevista';
     return `${p}% de probabilidad${day.rainMm ? ` · ${num(day.rainMm, 1)} mm` : ''}`;
@@ -211,8 +211,8 @@
     const r = d.rio.main;
     const rio = r && !r.missing ? `<div class="rio-main ${esc(r.status.key)}">
         <div class="rio-h"><span class="rio-v">${r.height !== null ? num(r.height, 2) + ' m' : 'S/D'}</span><span class="rio-t">${rioTrend(r)}</span></div>
-        <p><strong>${esc(r.status.label)}</strong> (alerta ${num(r.alert, 2)} m · evacuación ${num(r.evacuation, 2)} m)</p>
-        <p class="src">${esc(r.label)} · lectura del ${fechaHora(r.at)}${r.stale ? ' · <strong>dato viejo</strong>' : ''} · Prefectura Naval Argentina</p></div>` : status(d.rio.meta);
+        <p><strong>${esc(r.status.label)}</strong>${r.alert !== null && r.alert !== undefined ? ` (alerta ${num(r.alert, 2)} m · evacuación ${num(r.evacuation, 2)} m)` : ''}</p>
+        <p class="src">${esc(r.label)} · lectura del ${r.dateOnly ? fecha(r.at) : fechaHora(r.at)}${r.stale ? ' · <strong>dato viejo</strong>' : ''} · ${esc(r.fuente)}</p></div>` : status(d.rio.meta);
 
     // 7) Noticias
     const n = d.noticias;
@@ -303,7 +303,7 @@
       <section class="card mt"><h3>Pronóstico ${d.forecastOrigin === 'smn' ? 'oficial del SMN' : 'de los próximos días (modelo numérico)'}</h3>
         ${days || '<p>No hay pronóstico disponible en este momento.</p>'}
         ${status(d.meta.pronostico)}
-        ${d.forecastOrigin === 'modelo' ? `<p class="note">Este pronóstico sale de modelos numéricos (Open-Meteo). El SMN no publica su pronóstico por localidad en formato abierto: para el pronóstico oficial consultá ${ext('https://www.smn.gob.ar/pronostico', 'smn.gob.ar')}. Las <strong>alertas</strong> sí son oficiales del SMN.</p>` : ''}
+        ${d.forecastOrigin === 'modelo' ? `<p class="note">Este pronóstico sale de modelos numéricos (la fuente exacta figura abajo). El SMN no publica su pronóstico por localidad en formato abierto: para el pronóstico oficial consultá ${ext('https://www.smn.gob.ar/pronostico', 'smn.gob.ar')}. Las <strong>alertas</strong> sí son oficiales del SMN.</p>` : ''}
       </section>
       <details class="mt"><summary>¿Cuándo se marca un aviso en rojo?</summary><ul>${d.criterios.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></details>
       <p class="small muted">${esc(d.attribution)}</p>
@@ -444,14 +444,15 @@
   async function pageRios() {
     setTitle('Ríos');
     const d = await api('/api/rios');
-    const card = (r) => r.missing ? `<article class="ficha"><h3>${esc(r.label)}</h3><p>La Prefectura no publicó dato para este puerto.</p></article>` : `<article class="ficha rio ${esc(r.status.key)}${r.main ? ' main' : ''}">
+    const when = (r, iso) => (iso ? (r.dateOnly ? fecha(iso) : fechaHora(iso)) : '—');
+    const card = (r) => r.missing ? `<article class="ficha"><h3>${esc(r.label)}</h3><p>Ningún organismo publicó un dato reciente para este lugar.</p></article>` : `<article class="ficha rio ${esc(r.status.key)}${r.main ? ' main' : ''}">
         <h3>${esc(r.label)}</h3>
         <div class="rio-h"><span class="rio-v">${r.height !== null ? num(r.height, 2) + ' m' : 'S/D'}</span><span class="rio-t">${rioTrend(r)}</span></div>
         <p><strong>${esc(r.status.label)}</strong></p>
-        <dl class="facts"><div><dt>Nivel de alerta</dt><dd>${r.alert !== null ? num(r.alert, 2) + ' m' : '—'}</dd></div><div><dt>Nivel de evacuación</dt><dd>${r.evacuation !== null ? num(r.evacuation, 2) + ' m' : '—'}</dd></div>
-        <div><dt>Lectura</dt><dd>${r.at ? fechaHora(r.at) : '—'}</dd></div><div><dt>Anterior</dt><dd>${r.previous !== null ? num(r.previous, 2) + ' m' : '—'}${r.previousAt ? ` (${dt(r.previousAt, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })})` : ''}</dd></div></dl>
-        ${r.stale ? '<p class="status warn">Dato viejo: la última lectura publicada tiene más de 36 horas.</p>' : ''}
-        <p class="src">Estación: ${esc(r.port)} · Río ${esc(r.river)} · Prefectura Naval Argentina</p></article>`;
+        <dl class="facts"><div><dt>Nivel de alerta</dt><dd>${r.alert !== null && r.alert !== undefined ? num(r.alert, 2) + ' m' : 'no publicado'}</dd></div><div><dt>Nivel de evacuación</dt><dd>${r.evacuation !== null && r.evacuation !== undefined ? num(r.evacuation, 2) + ' m' : 'no publicado'}</dd></div>
+        <div><dt>Lectura</dt><dd>${when(r, r.at)}</dd></div><div><dt>Anterior</dt><dd>${r.previous !== null && r.previous !== undefined ? num(r.previous, 2) + ' m' : '—'}${r.previousAt ? ` (${when(r, r.previousAt)})` : ''}</dd></div></dl>
+        ${r.stale ? '<p class="status warn">Dato viejo: la última lectura publicada no es reciente.</p>' : ''}
+        <p class="src">Fuente: ${srcLink(r.fuenteUrl, r.fuente)}${r.otherSource ? ` · También: ${esc(r.otherSource.fuente)} ${num(r.otherSource.height, 2)} m (${r.otherSource.dateOnly ? fecha(r.otherSource.at) : fechaHora(r.otherSource.at)})` : ''}</p></article>`;
     const main = d.stations.filter((r) => r.main);
     const rest = d.stations.filter((r) => !r.main);
     render(`${back}
@@ -460,8 +461,9 @@
       <h3>Otros ríos de la provincia</h3>
       <div class="grid grid-2">${rest.map(card).join('')}</div>
       <p class="note">${esc(d.nota)}</p>
-      ${status(d.meta)}
-      <a class="btn secondary" href="${safeUrl(d.url)}" target="_blank" rel="noopener noreferrer">Ver la tabla oficial de Prefectura</a>`);
+      ${d.metas.map((m) => status(m)).join('')}
+      <a class="btn secondary" href="${safeUrl(d.url)}" target="_blank" rel="noopener noreferrer">Ver la tabla oficial de Prefectura</a>
+      <a class="btn secondary" href="${safeUrl(d.urlHidraulica)}" target="_blank" rel="noopener noreferrer">Ver niveles de la Dirección de Hidráulica</a>`);
   }
 
   // ---------------- CULTIVOS ----------------
