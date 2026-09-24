@@ -35,6 +35,7 @@ export function normalizeOpenMeteo(r) {
       humidity: c.relative_humidity_2m ?? null,
       precipitation: c.precipitation ?? null,
       weather: WMO[c.weather_code] ?? null,
+      code: c.weather_code ?? null,
       windSpeed: c.wind_speed_10m !== undefined ? Math.round(c.wind_speed_10m) : null,
       windDir: degToDir(c.wind_direction_10m),
       gust: c.wind_gusts_10m !== undefined ? Math.round(c.wind_gusts_10m) : null,
@@ -49,6 +50,15 @@ export function normalizeOpenMeteo(r) {
       windMax: d.wind_speed_10m_max?.[i] !== undefined ? Math.round(d.wind_speed_10m_max[i]) : null,
       gustMax: d.wind_gusts_10m_max?.[i] !== undefined ? Math.round(d.wind_gusts_10m_max[i]) : null,
       windDir: degToDir(d.wind_direction_10m_dominant?.[i]),
+    })),
+    // Próximas 48 horas, hora por hora (para los avisos de lluvia, tormenta y viento).
+    hours: (r.hourly?.time || []).map((t, i) => ({
+      time: t,
+      rainMm: r.hourly.precipitation?.[i] ?? null,
+      rainProb: r.hourly.precipitation_probability?.[i] ?? null,
+      code: r.hourly.weather_code?.[i] ?? null,
+      gust: r.hourly.wind_gusts_10m?.[i] !== undefined && r.hourly.wind_gusts_10m[i] !== null ? Math.round(r.hourly.wind_gusts_10m[i]) : null,
+      temp: r.hourly.temperature_2m?.[i] ?? null,
     })),
   };
 }
@@ -71,6 +81,8 @@ export default {
       longitude: locs.map((l) => l.lon).join(','),
       current: 'temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m',
       daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant',
+      hourly: 'precipitation,precipitation_probability,weather_code,wind_gusts_10m,temperature_2m',
+      forecast_hours: '48',
       timezone: config.timezone,
       forecast_days: '7',
       wind_speed_unit: 'kmh',

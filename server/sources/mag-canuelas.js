@@ -1,7 +1,7 @@
 // Mercado Agroganadero de Cañuelas (ex Liniers): precios de hacienda por categoría, $/kg vivo.
 import { getText } from '../lib/http.js';
 import { stripTags, parseArNumber, arDateToIso } from '../lib/text.js';
-import { putSnapshot, savePrice, previousPrice } from '../db.js';
+import { putSnapshot, getSnapshot, savePrice, previousPrice } from '../db.js';
 
 const URL = 'https://www.mercadoagroganadero.com.ar/dll/hacienda1.dll/haciinfo000002';
 const GROUPS = ['NOVILLOS', 'NOVILLITOS', 'VAQUILLONAS', 'VACAS', 'TOROS', 'MEJ'];
@@ -52,16 +52,41 @@ export default {
   access: 'Página pública. Sin API Key.',
   everyMin: 60,
   staleAfterMin: 60 * 24 * 4,
-  async run() {
+  async run({ log } = {}) {
     const html = await getText(URL, { encoding: 'windows-1252', headers: { Accept: 'text/html' } });
     const p = parseCanuelas(html);
     if (!p.rows.length) return { items: 0, message: 'Sin remate publicado en este momento (se conserva el último dato).' };
+    // Remate anterior (para la variación): se consulta la misma planilla del Mercado para esa fecha.
+    let prev = getSnapshot('mag-canuelas', 'anterior')?.data || null;
+    if (!prev || !(prev.date < p.date) || prev.forDate !== p.date) {
+      prev = null;
+      try {
+        const idx = getSnapshot('mag-indices', 'ultimos')?.data;
+        const known = [...(idx?.inmag || []), ...(idx?.igmag || [])].map((x) => x.date).filter((d) => d < p.date).sort();
+        const candidates = known.length ? [known[known.length - 1]] : [];
+        for (let i = 1; i <= 7 && candidates.length < 8; i++) {
+          const d = new Date(Date.parse(p.date + 'T12:00:00-03:00') - i * 864e5).toISOString().slice(0, 10);
+          if (!candidates.includes(d)) candidates.push(d);
+        }
+        for (const d of candidates) {
+          const ar = d.split('-').reverse().join('/');
+          const body = new URLSearchParams({ ID: '', CP: '', FLASH: '', USUARIO: 'SIN IDENTIFICAR', txtFechaIni: ar, txtFechaFin: ar }).toString();
+          const h = await getText(URL, { method: 'POST', body, encoding: 'windows-1252', headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'text/html' } });
+          const q = parseCanuelas(h);
+          if (q.rows.length && q.date && q.date < p.date) { prev = { date: q.date, groups: q.groups, general: q.general, forDate: p.date }; break; }
+        }
+        if (prev) putSnapshot('mag-canuelas', 'anterior', prev, prev.date);
+      } catch (e) {
+        log?.('warn', 'No se pudo leer el remate anterior: ' + e.message);
+      }
+    }
     for (const g of p.groups) {
-      const prev = previousPrice('Hacienda: ' + g.label, 'Cañuelas', p.date);
-      g.previous = prev ? { date: prev.date, value: prev.value } : null;
+      const pg = prev?.groups?.find((x) => x.group === g.group);
+      const ph = pg ? null : previousPrice('Hacienda: ' + g.label, 'Cañuelas', p.date);
+      g.previous = pg ? { date: prev.date, value: pg.avg } : ph ? { date: ph.date, value: ph.value } : null;
       if (p.status === 'definitivos') savePrice({ product: 'Hacienda: ' + g.label, market: 'Cañuelas', date: p.date, value: g.avg, unit: 'kg vivo', currency: 'ARS', source: 'mag-canuelas' });
     }
     putSnapshot('mag-canuelas', 'ultimo', p, p.date);
-    return { items: p.rows.length, message: `Remate del ${p.date} (${p.status || 'estado s/d'})` };
+    return { items: p.rows.length, message: `Remate del ${p.date} (${p.status || 'estado s/d'})${prev ? ', anterior ' + prev.date : ''}` };
   },
 };
