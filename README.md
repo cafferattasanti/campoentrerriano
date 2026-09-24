@@ -12,7 +12,7 @@ No es una guía veterinaria: no tiene fichas de enfermedades, tratamientos ni me
 |---|---|---|---|---|---|
 | Alertas meteorológicas oficiales | SMN — feed oficial CAP | Sí | cada 20 min | No | Oficial y público |
 | Avisos de lluvia (LLUEVE AHORA / LLUVIA PREVISTA HOY-MAÑANA), tormenta, granizo, viento, helada, calor | Open-Meteo hora por hora (próximas 48 h) + observación SMN si la estación está a ≤ 40 km | Sí | cada 60 min | No (uso no comercial) | Modelo: se rotula como tal. Criterios en `server/lib/avisos.js` |
-| Pronóstico 7 días | Open-Meteo (modelos numéricos) | Sí | cada 60 min | No (uso no comercial) | Modelo: se rotula como tal |
+| Pronóstico 7 días | Open-Meteo (modelos numéricos); si no responde (le pasa al servidor público por límite de consultas compartido), **MET Norway** | Sí | cada 60 min | No | Modelo: se rotula como tal, con la fuente usada |
 | Tiempo actual | SMN datos abiertos si la estación está cerca; si no (Gualeguay), Open-Meteo en el punto exacto + la observación oficial más cercana aparte | Sí | cada 60 min | No | Oficial / estimado, siempre indicado |
 | **Novillo** | Mercado Agroganadero de Cañuelas — INMAG (Índice Novillo) | Sí | cada 30 min | No | Mercado de referencia nacional |
 | **Vaca** | Mercado Agroganadero de Cañuelas — promedio ponderado de Vacas del último remate (+ remate anterior para la variación) | Sí | cada 60 min | No | Mercado de referencia nacional |
@@ -23,7 +23,7 @@ No es una guía veterinaria: no tiene fichas de enfermedades, tratamientos ni me
 | Arroz cáscara ($/quintal) | Secretaría de Agricultura, Ganadería y Pesca | Sí | cada 12 h (publica 1 vez por mes) | No | Oficial — **mensual** |
 | Dólar oficial | Banco de la Nación Argentina (billete) | Sí | cada 30 min | No | Oficial |
 | Dólar mayorista y blue | DolarApi.com (respaldo del oficial si el BNA no responde) | Sí | cada 30 min | No | Servicio público; el blue es **informal** |
-| Altura de los ríos (Gualeguay en Puerto Ruiz primero, Gualeguaychú, Ibicuy, Paraná, Uruguay) | Prefectura Naval Argentina | Sí | cada 60 min (Prefectura publica cada ~12 h) | No | Oficial. Dato con más de 36 h se marca «viejo» |
+| Altura de los ríos (Gualeguay en Puerto Ruiz primero, Rosario del Tala, Gualeguaychú, Ibicuy, Paraná, Uruguay) | Prefectura Naval Argentina **y** Dirección de Hidráulica de Entre Ríos (datos del INA + escalas propias del río Gualeguay). Se muestra la lectura más reciente | Sí | 60 / 120 min | No | Oficial. Prefectura no responde a servidores fuera de Argentina; Hidráulica sí |
 | Alertas sanitarias importantes | SENASA — «Situación epidemiológica» + comunicados del SENASA filtrados (brotes, detecciones, emergencias, estatus) | Sí | cada 3 h / 60 min | No | Oficial |
 | Plagas de cultivos | SINAVIMO (SENASA), INTA | Contenido curado (`content/cultivos.json`) | revisión manual | — | Oficial, con fuente por ficha |
 | Noticias | El Debate Pregón (Gualeguay), Gobierno de Entre Ríos, Bolsa de Cereales de ER, SENASA, INTA, La Nación Campo, Bichos de Campo, Infocampo | Sí, con **filtro estricto** (`server/lib/news-classify.js`) | cada 60 min | No | Prioridad: Gualeguay → departamentos → provincia → nacional con impacto |
