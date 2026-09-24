@@ -41,6 +41,14 @@ export function parseCanuelas(html) {
   };
 }
 
+// Planilla de un día puntual (yyyy-mm-dd), con el mismo formulario que usa el sitio del Mercado.
+async function fetchDay(d) {
+  const ar = d.split('-').reverse().join('/');
+  const body = new URLSearchParams({ ID: '', CP: '', FLASH: '', USUARIO: 'SIN IDENTIFICAR', txtFechaIni: ar, txtFechaFin: ar }).toString();
+  const h = await getText(URL, { method: 'POST', body, encoding: 'windows-1252', headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'text/html' } });
+  return parseCanuelas(h);
+}
+
 export default {
   id: 'mag-canuelas',
   name: 'Mercado Agroganadero de Cañuelas — Precios de hacienda',
@@ -54,25 +62,27 @@ export default {
   staleAfterMin: 60 * 24 * 4,
   async run({ log } = {}) {
     const html = await getText(URL, { encoding: 'windows-1252', headers: { Accept: 'text/html' } });
-    const p = parseCanuelas(html);
+    let p = parseCanuelas(html);
+    const idx = getSnapshot('mag-indices', 'ultimos')?.data;
+    const knownDates = [...new Set([...(idx?.inmag || []), ...(idx?.igmag || [])].map((x) => x.date))].sort();
+    // Fuera del horario de remate la planilla del día viene vacía: se pide la del último remate conocido.
+    if (!p.rows.length && knownDates.length) {
+      try { p = await fetchDay(knownDates[knownDates.length - 1]); } catch (e) { log?.('warn', 'No se pudo leer el último remate: ' + e.message); }
+    }
     if (!p.rows.length) return { items: 0, message: 'Sin remate publicado en este momento (se conserva el último dato).' };
     // Remate anterior (para la variación): se consulta la misma planilla del Mercado para esa fecha.
     let prev = getSnapshot('mag-canuelas', 'anterior')?.data || null;
     if (!prev || !(prev.date < p.date) || prev.forDate !== p.date) {
       prev = null;
       try {
-        const idx = getSnapshot('mag-indices', 'ultimos')?.data;
-        const known = [...(idx?.inmag || []), ...(idx?.igmag || [])].map((x) => x.date).filter((d) => d < p.date).sort();
+        const known = knownDates.filter((d) => d < p.date);
         const candidates = known.length ? [known[known.length - 1]] : [];
         for (let i = 1; i <= 7 && candidates.length < 8; i++) {
           const d = new Date(Date.parse(p.date + 'T12:00:00-03:00') - i * 864e5).toISOString().slice(0, 10);
           if (!candidates.includes(d)) candidates.push(d);
         }
         for (const d of candidates) {
-          const ar = d.split('-').reverse().join('/');
-          const body = new URLSearchParams({ ID: '', CP: '', FLASH: '', USUARIO: 'SIN IDENTIFICAR', txtFechaIni: ar, txtFechaFin: ar }).toString();
-          const h = await getText(URL, { method: 'POST', body, encoding: 'windows-1252', headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'text/html' } });
-          const q = parseCanuelas(h);
+          const q = await fetchDay(d);
           if (q.rows.length && q.date && q.date < p.date) { prev = { date: q.date, groups: q.groups, general: q.general, forDate: p.date }; break; }
         }
         if (prev) putSnapshot('mag-canuelas', 'anterior', prev, prev.date);
