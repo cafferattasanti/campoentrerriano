@@ -5,7 +5,10 @@
 import { getJson } from '../lib/http.js';
 import { config } from '../config.js';
 import { currentRegion } from '../regions/index.js';
-import { putSnapshot } from '../db.js';
+import { putSnapshot, getSnapshot } from '../db.js';
+
+export const RELEVO_URL = 'https://raw.githubusercontent.com/cafferattasanti/campoentrerriano/datos/datos/open-meteo.json';
+const getSnapshotFresh = (id) => { const s = getSnapshot('open-meteo', id); return s && Date.now() - Date.parse(s.fetchedAt) < 5 * 60e3; };
 
 export const WMO = {
   0: 'Despejado', 1: 'Mayormente despejado', 2: 'Parcialmente nublado', 3: 'Nublado',
@@ -100,11 +103,30 @@ export default {
         ok += arr.length;
       } catch (e) {
         errors.push(e.message);
+        if (e.status === 429) break; // el servicio limita a este servidor: no insistir, usar el relevo
       }
     }
-    if (errors.length) log?.('warn', `${errors.length} tanda(s) sin datos: ${errors[0]}`);
-    if (!ok) throw new Error(errors[0] || 'Sin datos');
-    return { items: ok, message: `${ok}/${all.length} localidades` };
+    // Relevo: si Open-Meteo rechazó a este servidor (pasa en el servidor público por la IP compartida),
+    // se usa la copia que GitHub Actions descarga cada hora del mismo Open-Meteo (rama "datos" del repositorio).
+    let relevo = 0;
+    if (ok < all.length) {
+      try {
+        const j = await getJson(RELEVO_URL + '?t=' + Date.now());
+        const edadMin = (Date.now() - Date.parse(j.generado)) / 60e3;
+        if (!(edadMin < 180)) throw new Error(`la copia tiene ${Math.round(edadMin)} minutos`);
+        const hechos = new Set(all.filter((l) => getSnapshotFresh(l.id)).map((l) => l.id));
+        j.ids.forEach((id, i) => {
+          if (hechos.has(id) || !all.some((l) => l.id === id)) return;
+          putSnapshot('open-meteo', id, { ...normalizeOpenMeteo(j.datos[i]), relevo: j.generado }, j.datos[i].current?.time || null);
+          relevo++;
+        });
+      } catch (e) {
+        errors.push('relevo: ' + e.message);
+      }
+    }
+    if (errors.length) log?.('warn', `${errors.length} problema(s): ${errors.join(' | ').slice(0, 300)}`);
+    if (!ok && !relevo) throw new Error(errors[0] || 'Sin datos');
+    return { items: ok + relevo, message: `${ok} localidades directo${relevo ? `, ${relevo} por el relevo de GitHub` : ''}` };
   },
 };
 
