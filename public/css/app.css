@@ -181,3 +181,81 @@ details summary { cursor: pointer; font-weight: 700; color: var(--navy); min-hei
 .ficha.bad { border-left-color: var(--red); }
 main:focus { outline: none; }
 .nowrap { white-space: nowrap; }
+
+/* ================= Versión 3: Gualeguay, hacienda fijada, avisos de lluvia, ríos, dólar ================= */
+/* Franja fija de hacienda: siempre visible arriba, en todas las páginas */
+.fijados { position: sticky; top: 0; z-index: 5; display: grid; grid-template-columns: repeat(3, 1fr); background: var(--navy); border-bottom: 3px solid var(--earth); }
+.fijados[hidden] { display: none; }
+.fij { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: .35rem .2rem .4rem; color: #fff; text-decoration: none; border-left: 1px solid rgba(255,255,255,.25); line-height: 1.15; min-height: 3.2rem; }
+.fij:first-child { border-left: 0; }
+.fij:hover { background: var(--navy-2); }
+.fij-n { font-size: .7rem; font-weight: 800; letter-spacing: .08em; }
+.fij-v { font-family: var(--serif); font-size: 1.15rem; font-weight: 700; }
+.fij-s { font-size: .68rem; opacity: .85; }
+
+/* Portada: Gualeguay protagonista */
+.hero { background: var(--card); border: 1px solid var(--line); border-top: 6px solid var(--navy); border-radius: var(--radius); padding: .9rem 1.1rem 1rem; }
+.hero .kicker { margin: 0; }
+.loc-title .pin { font-size: .7em; }
+.loc-title { white-space: nowrap; font-family: var(--serif); font-size: clamp(1.8rem, 8vw, 2.8rem); letter-spacing: .02em; margin: .1rem 0 .5rem; color: var(--navy); border-bottom: 2px solid var(--navy); padding-bottom: .2rem; }
+.card.red { border-top-color: var(--red); }
+.sub-h { font-family: var(--sans); text-transform: uppercase; letter-spacing: .06em; font-size: .8rem; color: var(--muted); margin: .8rem 0 .4rem; }
+.alert-box h4 { margin: 0 0 .25rem; font-family: var(--serif); font-size: 1.15rem; color: var(--ink); }
+.alert-box p { margin: .2rem 0; }
+
+/* Avisos de lluvia y tiempo: rojo macizo, imposible de pasar por alto; amarillo más discreto */
+.avisos { display: grid; gap: .5rem; margin: .4rem 0 .8rem; }
+.aviso { display: flex; gap: .7rem; align-items: flex-start; border-radius: var(--radius); padding: .75rem .9rem; }
+.aviso.rojo { background: var(--red); color: #fff; border: 2px solid #6d0d0d; }
+.aviso.amarillo { background: var(--yellow-soft); color: var(--ink); border: 2px solid #b08900; }
+.aviso-ico { font-size: 1.8rem; line-height: 1; }
+.aviso-t { display: block; font-size: 1.2rem; font-weight: 900; letter-spacing: .03em; }
+.aviso.rojo .aviso-t { font-size: 1.35rem; }
+.aviso-d { display: block; font-size: 1rem; }
+.aviso-o { display: block; font-size: .8rem; opacity: .85; margin-top: .15rem; }
+
+/* Hacienda: novillo / vaca / ternero */
+.htiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .45rem; }
+.htile { min-width: 0; background: var(--paper); border: 2px solid var(--earth); border-radius: var(--radius); padding: .55rem .3rem; text-align: center; overflow-wrap: anywhere; }
+.htile.old { border-style: dashed; }
+.htile-n { font-weight: 900; letter-spacing: .06em; color: var(--earth); font-size: .9rem; }
+.htile-v { font-family: var(--serif); font-size: 1.6rem; font-weight: 700; color: var(--navy); line-height: 1.1; margin-top: .15rem; }
+.htile-u { font-size: .78rem; color: var(--muted); }
+.htile .trend { display: block; }
+.htile-s { font-size: .78rem; color: var(--muted); margin-top: .2rem; }
+.htiles.big .htile-v { font-size: 2rem; }
+@media (max-width: 560px) { .htiles.big { grid-template-columns: 1fr; } .htile-v { font-size: 1.2rem; } .htile-n { font-size: .75rem; letter-spacing: .02em; } .htile-s, .htile-u { font-size: .72rem; } }
+.enpie { display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .8rem; margin-top: .7rem; padding: .55rem .7rem; border: 1px solid var(--line); border-left: 6px solid var(--earth); border-radius: var(--radius); background: var(--card); }
+.enpie-n { font-weight: 800; flex: 1 1 100%; font-size: .9rem; text-transform: uppercase; letter-spacing: .04em; color: var(--earth); }
+.enpie-v { font-family: var(--serif); font-size: 1.5rem; font-weight: 700; color: var(--navy); }
+.enpie.big .enpie-v { font-size: 2.1rem; }
+.enpie-s { font-size: .88rem; color: var(--muted); }
+
+/* Ríos */
+.rio-main, .ficha.rio { border-left: 6px solid var(--green); }
+.rio-main { padding: .3rem 0 .1rem .8rem; }
+.rio-main.cerca, .ficha.rio.cerca { border-left-color: #b08900; }
+.rio-main.alerta, .ficha.rio.alerta { border-left-color: var(--orange); background: #ffe8d6; }
+.rio-main.evacuacion, .ficha.rio.evacuacion { border-left-color: var(--red); background: var(--red-soft); }
+.ficha.rio.main { border-width: 2px; border-left-width: 8px; border-color: var(--navy); }
+.rio-h { display: flex; flex-wrap: wrap; align-items: baseline; gap: .3rem 1rem; }
+.rio-v { font-family: var(--serif); font-size: 2.2rem; font-weight: 700; color: var(--navy); }
+.rio-t { font-weight: 800; font-size: 1.05rem; }
+
+/* Dólar */
+.dol { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+.dol > div { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); padding: .5rem; text-align: center; }
+.dol-l { display: block; font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 700; }
+.dol-v { white-space: nowrap; font-family: var(--serif); font-size: 1.6rem; font-weight: 700; color: var(--navy); }
+
+/* Alertas sanitarias */
+.alert-box.san { border-color: var(--earth); background: var(--card); }
+.alert-box.san.alta { border-color: var(--red); background: var(--red-soft); }
+.alert-box.san.media { border-color: #b08900; background: var(--yellow-soft); }
+.sanit { margin: .3rem 0; }
+.sanit div { display: grid; grid-template-columns: 8.5rem 1fr; gap: .5rem; border-top: 1px solid var(--line); padding: .25rem 0; }
+.sanit dt { font-weight: 800; color: var(--navy); font-size: .9rem; }
+.sanit dd { margin: 0; }
+@media (max-width: 520px) { .sanit div { grid-template-columns: 1fr; gap: 0; } }
+.grid > * { min-width: 0; }
+.prices td.num .sub { white-space: normal; }
