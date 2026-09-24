@@ -12,6 +12,7 @@ import { FEEDS } from './sources/noticias.js';
 import { PAGE_INMAG, PAGE_IGMAG } from './sources/mag-indices.js';
 import { PAGE_ROSGAN } from './sources/rosgan.js';
 import { URL_ALTURAS } from './sources/prefectura-rios.js';
+import { PAGE_HID, PAGE_HID_GUALEGUAY } from './sources/hidraulica-rios.js';
 import { normalize } from './lib/text.js';
 
 const loadJson = (p) => JSON.parse(readFileSync(resolve(ROOT, p), 'utf8'));
@@ -25,6 +26,16 @@ const NEAR_STATION_KM = 40; // más lejos que esto, la estación del SMN no repr
 const isFresh = (iso, min) => iso && Date.now() - Date.parse(iso) < min * 60e3;
 
 // ------------------------------------------------------------------ CLIMA
+// Modelo de pronóstico: Open-Meteo si tiene dato reciente; si no, MET Norway (respaldo).
+function modelSnapshot(locId) {
+  const om = getSnapshot('open-meteo', locId);
+  const met = getSnapshot('met-no', locId);
+  const fresh = (s) => s && Date.now() - Date.parse(s.fetchedAt) < 180 * 60e3;
+  if (om && (fresh(om) || !met || Date.parse(om.fetchedAt) >= Date.parse(met.fetchedAt))) return { snap: om, source: 'open-meteo', label: 'Open-Meteo' };
+  if (met) return { snap: met, source: 'met-no', label: 'MET Norway' };
+  return { snap: om, source: 'open-meteo', label: 'Open-Meteo' };
+}
+
 export function clima(locId) {
   const loc = findLocality(locId);
   const station = nearestStation(loc);
@@ -32,7 +43,8 @@ export function clima(locId) {
   const sNow = getSnapshot('smn-actual', loc.id);
   const sObs = getSnapshot('smn-observacion', station.id);
   const sModel = getSnapshot('smn-modelo', station.id);
-  const sOm = getSnapshot('open-meteo', loc.id);
+  const mdl = modelSnapshot(loc.id);
+  const sOm = mdl.snap;
 
   // Estado actual: 1) SMN (servicio por localidad), 2) datos abiertos SMN si la estación está cerca (≤ 40 km),
   // 3) modelo Open-Meteo en el punto exacto de la localidad. Si la estación está lejos (ej. Gualeguay: la más
@@ -44,13 +56,13 @@ export function clima(locId) {
   } else if (obsFresh && station.km <= NEAR_STATION_KM) {
     current = { ...obsFresh, origin: 'smn-abiertos', originLabel: `Observado por el SMN en ${obsFresh.station}${station.km > 5 ? ` (a ${station.km} km)` : ''}` };
   } else if (sOm) {
-    current = { ...sOm.data.current, origin: 'modelo', originLabel: `Estimado por modelo (Open-Meteo) para ${loc.name}. No es una medición.` };
+    current = { ...sOm.data.current, origin: 'modelo', originLabel: `Estimado por modelo (${mdl.label}) para ${loc.name}. No es una medición.` };
   } else if (obsFresh) {
     // Respaldo si el modelo no está disponible: la observación oficial más cercana, aclarando la distancia.
     current = { ...obsFresh, origin: 'smn-abiertos', originLabel: `Observado por el SMN en ${obsFresh.station} (a ${station.km} km de ${loc.name}).` };
   }
   const nearestObs = obsFresh && current?.origin === 'modelo' ? { station: obsFresh.station, km: station.km, temp: obsFresh.temp, weather: obsFresh.weather, observedAt: obsFresh.observedAt } : null;
-  const avisos = computeAvisos({ om: sOm?.data, obs: obsFresh && station.km <= NEAR_STATION_KM ? obsFresh : null, obsKm: station.km });
+  const avisos = computeAvisos({ om: sOm?.data, obs: obsFresh && station.km <= NEAR_STATION_KM ? obsFresh : null, obsKm: station.km, provider: mdl.label });
   if (current) {
     const om = sOm?.data?.current;
     current.estimated = {};
@@ -93,14 +105,16 @@ export function clima(locId) {
     days,
     modelStation: sModel ? { name: station.obsName, days: sModel.data.days, file: sModel.data.file } : null,
     meta: {
-      pronostico: forecastOrigin === 'smn' ? meta('smn-pronostico', sFc) : forecastOrigin === 'smn-modelo' ? meta('smn-datos-abiertos', sModel) : meta('open-meteo', sOm),
-      actual: current?.origin === 'smn' ? meta('smn-pronostico', sNow) : current?.origin === 'smn-abiertos' ? meta('smn-datos-abiertos', sObs) : meta('open-meteo', sOm),
+      pronostico: forecastOrigin === 'smn' ? meta('smn-pronostico', sFc) : forecastOrigin === 'smn-modelo' ? meta('smn-datos-abiertos', sModel) : meta(mdl.source, sOm),
+      actual: current?.origin === 'smn' ? meta('smn-pronostico', sNow) : current?.origin === 'smn-abiertos' ? meta('smn-datos-abiertos', sObs) : meta(mdl.source, sOm),
       observacion: meta('smn-datos-abiertos', sObs),
-      modelo: meta('open-meteo', sOm),
+      modelo: meta(mdl.source, sOm),
     },
     attribution: forecastOrigin === 'smn'
       ? 'Pronóstico: Servicio Meteorológico Nacional. Milímetros y ráfagas estimados: Open-Meteo.com (CC BY 4.0), por modelo numérico.'
-      : 'Pronóstico por modelo numérico: Open-Meteo.com (CC BY 4.0), que combina modelos de servicios meteorológicos nacionales. Observaciones y pronóstico por estación: Servicio Meteorológico Nacional (datos abiertos). Alertas: SMN.',
+      : mdl.source === 'met-no'
+        ? 'Pronóstico por modelo numérico: datos de MET Norway (Instituto Meteorológico de Noruega, CC BY 4.0), usados como respaldo porque Open-Meteo no respondió. Observaciones: Servicio Meteorológico Nacional (datos abiertos). Alertas: SMN.'
+        : 'Pronóstico por modelo numérico: Open-Meteo.com (CC BY 4.0), que combina modelos de servicios meteorológicos nacionales. Observaciones y pronóstico por estación: Servicio Meteorológico Nacional (datos abiertos). Alertas: SMN.',
   };
 }
 
@@ -132,7 +146,7 @@ export function alertas(locId) {
       meta: meta('smn-cap', cap),
       avisos: clima(loc.id).avisos,
       criterios: CRITERIOS,
-      metaModelo: meta('open-meteo', getSnapshot('open-meteo', loc.id)),
+      metaModelo: (() => { const m = modelSnapshot(loc.id); return meta(m.source, m.snap); })(),
       sanitarias: sanitarias(),
       noAlertsText: 'No hay alertas meteorológicas activas para esta zona.',
     };
@@ -163,7 +177,7 @@ export function alertas(locId) {
     meta: meta('smn-alertas', snap),
     avisos: clima(loc.id).avisos,
     criterios: CRITERIOS,
-    metaModelo: meta('open-meteo', getSnapshot('open-meteo', loc.id)),
+    metaModelo: (() => { const m = modelSnapshot(loc.id); return meta(m.source, m.snap); })(),
     sanitarias: sanitarias(),
     noAlertsText: 'No hay alertas meteorológicas activas para esta zona.',
   };
@@ -241,16 +255,60 @@ export function dolar() {
 }
 
 // ------------------------------------------------------------------ RÍOS
+// Dos fuentes oficiales: Prefectura (lectura cada ~12 h) y la Dirección de Hidráulica de Entre Ríos (INA y escalas
+// propias en el río Gualeguay, lectura diaria). Para cada estación se muestra la lectura más reciente de las dos.
+const TEND = { sube: 'CRECE', baja: 'BAJA', estable: 'ESTAC' };
+function riverStatus(r) {
+  if (r.height === null || r.height === undefined) return { key: 'sd', label: 'Sin dato' };
+  if (r.alert === null || r.alert === undefined) return { key: 'nolevel', label: 'La fuente no publica nivel de alerta para esta escala' };
+  if (r.evacuation !== null && r.evacuation !== undefined && r.height >= r.evacuation) return { key: 'evacuacion', label: 'Nivel de EVACUACIÓN' };
+  if (r.height >= r.alert) return { key: 'alerta', label: 'Nivel de ALERTA' };
+  if (r.height >= r.alert - 0.5) return { key: 'cerca', label: 'Cerca del nivel de alerta' };
+  return { key: 'normal', label: 'Por debajo del nivel de alerta' };
+}
 export function rios() {
-  const s = getSnapshot('prefectura-rios', 'entre-rios');
-  const stations = (s?.data?.stations || []).map((r) => ({ ...r, hoursOld: r.at ? Math.round((Date.now() - Date.parse(r.at)) / 36e5) : null }))
-    .map((r) => ({ ...r, stale: r.hoursOld === null || r.hoursOld > 36 }));
+  const region = currentRegion();
+  const sp = getSnapshot('prefectura-rios', 'entre-rios');
+  const sh = getSnapshot('hidraulica-rios', 'entre-rios');
+  const prefList = sp?.data?.stations || [];
+  const ina = sh?.data?.ina || [];
+  const gual = sh?.data?.gualeguay || {};
+  const hoursOld = (iso) => (iso ? Math.round((Date.now() - Date.parse(iso)) / 36e5) : null);
+  const stations = region.rivers.map((w) => {
+    const p = prefList.find((x) => x.label === w.label && !x.missing);
+    const cands = [];
+    if (p && p.at) cands.push({ ...p, fuente: 'Prefectura Naval Argentina', fuenteUrl: URL_ALTURAS, dateOnly: false });
+    if (w.ina) {
+      const i = ina.find((x) => x.nombre === w.ina && x.vigente && x.height !== null);
+      if (i) cands.push({ port: w.port, river: w.river, label: w.label, main: !!w.main, height: i.height, variation: i.delta, at: i.at, state: TEND[i.tendencia] || null, previous: i.delta !== null ? Math.round((i.height - i.delta) * 100) / 100 : null, previousAt: null, alert: i.alert, evacuation: i.evacuation, fuente: 'Dirección de Hidráulica de Entre Ríos (datos del INA)', fuenteUrl: PAGE_HID, dateOnly: false });
+    }
+    if (w.hid && gual[w.hid]?.length) {
+      const g = gual[w.hid];
+      const l = g[g.length - 1];
+      const pv = g[g.length - 2];
+      const d = pv ? Math.round((l.height - pv.height) * 100) / 100 : null;
+      // Niveles de alerta: solo si Prefectura los publica para la misma escala (Puerto Ruiz); si no, no se inventan.
+      cands.push({ port: w.port, river: w.river, label: w.label, main: !!w.main, height: l.height, variation: d, at: l.date + 'T12:00:00-03:00', state: d === null ? null : d > 0.02 ? 'CRECE' : d < -0.02 ? 'BAJA' : 'ESTAC', previous: pv ? pv.height : null, previousAt: pv ? pv.date + 'T12:00:00-03:00' : null, alert: null, evacuation: null, fuente: 'Dirección de Hidráulica de Entre Ríos', fuenteUrl: PAGE_HID_GUALEGUAY, dateOnly: true, history: g.slice(-7) });
+    }
+    if (!cands.length) return { port: w.port, river: w.river, label: w.label, main: !!w.main, missing: true };
+    cands.sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
+    const r = cands[0];
+    const out = { ...r, label: w.label, main: !!w.main, hoursOld: hoursOld(r.at) };
+    out.stale = out.hoursOld === null || out.hoursOld > (r.dateOnly ? 60 : 36);
+    out.status = riverStatus(out);
+    out.otherSource = cands[1] ? { fuente: cands[1].fuente, height: cands[1].height, at: cands[1].at, dateOnly: cands[1].dateOnly } : null;
+    return out;
+  }).filter((r) => !r.missing || r.main);
+  const metaP = meta('prefectura-rios', sp);
+  const metaH = meta('hidraulica-rios', sh);
   return {
     main: stations.find((r) => r.main) || null,
     stations,
     url: URL_ALTURAS,
-    nota: 'Alturas en metros según el hidrómetro de cada puerto (no es la profundidad del río). Prefectura publica una lectura cada 12 horas aproximadamente. «Alerta» y «Evacuación» son los niveles de referencia que publica Prefectura para cada puerto.',
-    meta: meta('prefectura-rios', s),
+    urlHidraulica: PAGE_HID,
+    nota: 'Alturas en metros según la escala (hidrómetro) de cada lugar; no es la profundidad del río. Cada estación muestra la lectura más reciente entre Prefectura Naval (cada ~12 h) y la Dirección de Hidráulica de Entre Ríos (datos del INA y escalas propias en el río Gualeguay, lectura diaria). «Alerta» y «Evacuación» son los niveles de referencia que publica cada organismo. Las escalas de distintos organismos pueden no coincidir exactamente.',
+    meta: metaP.status === 'ok' || metaP.status === 'retrying' ? metaP : metaH.status === 'ok' || metaH.status === 'retrying' ? metaH : metaP,
+    metas: [metaP, metaH],
   };
 }
 
