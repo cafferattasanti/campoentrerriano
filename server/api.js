@@ -366,6 +366,7 @@ export function fuentes() {
       acceso: s.access, cadaMin: states[s.id]?.every_min || s.everyMin, activa: !!states[s.id]?.enabled,
       ultimaActualizacion: states[s.id]?.last_success_at || null,
       conProblemas: !!(states[s.id]?.last_error_at && (!states[s.id]?.last_success_at || states[s.id].last_error_at > states[s.id].last_success_at)),
+      ultimoError: states[s.id]?.last_error_at && (!states[s.id]?.last_success_at || states[s.id].last_error_at > states[s.id].last_success_at) ? String(states[s.id].last_error || '').slice(0, 200) : null,
     })),
     noticias: FEEDS.map((f) => ({ nombre: f.name, url: f.site || f.url, oficial: f.official })),
     contenido: [
