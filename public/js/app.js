@@ -172,7 +172,9 @@
         <div><dt>Lluvia mañana</dt><dd>${rainTxt(c.tomorrow)}</dd></div>
       </dl>
       ${cur ? `<p class="src">${esc(cur.originLabel)}${cur.observedAt ? ` Dato de las ${dt(cur.observedAt, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })} h.` : ''}</p>` : ''}
-      ${c.nearestObs ? `<p class="src">Observación oficial más cercana: SMN ${esc(c.nearestObs.station)} (a ${num(c.nearestObs.km)} km): ${num(c.nearestObs.temp, 1)}°, ${esc(c.nearestObs.weather || '')}.</p>` : ''}`
+      ${c.nearestObs ? `<p class="src">Observación oficial más cercana: SMN ${esc(c.nearestObs.station)} (a ${num(c.nearestObs.km)} km): ${num(c.nearestObs.temp, 1)}°, ${esc(c.nearestObs.weather || '')}.</p>` : ''}
+      ${c.modelo && !c.modelo.conProbabilidad ? '<p class="status warn">En este momento no hay probabilidad de lluvia disponible (se muestra un pronóstico de respaldo). Consultá el pronóstico oficial del SMN.</p>' : ''}
+      ${c.smnOficialUrl ? `<p class="src">${ext(c.smnOficialUrl, 'Ver el pronóstico oficial del SMN para esta localidad →')}</p>` : ''}`
       : '<p>Todavía no hay datos del clima para esta localidad.</p>';
 
     // 2) Alertas: oficiales del SMN + sanitarias
@@ -281,6 +283,8 @@
         <div><dt>Hora del dato</dt><dd>${cur.observedAt ? dt(cur.observedAt, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }) + ' h' : '—'}</dd></div>
       </dl>
       <p class="src">${esc(cur.originLabel)}</p>
+      ${d.modelo && !d.modelo.conProbabilidad ? '<p class="status warn">En este momento no hay probabilidad de lluvia disponible (se muestra un pronóstico de respaldo). Consultá el pronóstico oficial del SMN.</p>' : ''}
+      <p class="src">${ext(d.smnOficialUrl, 'Ver el pronóstico oficial del SMN para esta localidad →')}</p>
       ${d.nearestObs ? `<p class="src">Observación oficial más cercana: SMN ${esc(d.nearestObs.station)} (a ${num(d.nearestObs.km)} km): ${num(d.nearestObs.temp, 1)}°, ${esc(d.nearestObs.weather || '')}, ${fechaHora(d.nearestObs.observedAt)}.</p>` : ''}` : '<p>No hay datos actuales disponibles.</p>';
 
     const days = d.days.map((day) => {
