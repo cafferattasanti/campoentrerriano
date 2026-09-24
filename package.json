@@ -1,7 +1,7 @@
 {
   "name": "campo-entre-rios",
   "version": "1.0.0",
-  "description": "El diario digital del campo entrerriano: clima, alertas, precios, sanidad animal, medicamentos, plagas y noticias con fuentes oficiales.",
+  "description": "El diario digital del campo entrerriano: clima, alertas, hacienda, granos, dólar, ríos, plagas y noticias con fuentes oficiales.",
   "private": true,
   "type": "module",
   "engines": {
