@@ -73,29 +73,58 @@ export default {
   access: 'API pública. Sin clave para uso no comercial; con OPEN_METEO_API_KEY para uso comercial.',
   everyMin: 60,
   staleAfterMin: 180,
-  async run() {
+  // Primero la localidad por defecto (Gualeguay), después el resto en tandas chicas: si el servicio gratuito
+  // limita la cantidad de consultas (HTTP 429), al menos la localidad principal queda actualizada.
+  async run({ log } = {}) {
     const region = currentRegion();
-    const locs = region.localities;
-    const params = new URLSearchParams({
-      latitude: locs.map((l) => l.lat).join(','),
-      longitude: locs.map((l) => l.lon).join(','),
-      current: 'temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m',
-      daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant',
-      hourly: 'precipitation,precipitation_probability,weather_code,wind_gusts_10m,temperature_2m',
-      forecast_hours: '48',
-      timezone: config.timezone,
-      forecast_days: '7',
-      wind_speed_unit: 'kmh',
-    });
-    let base = 'https://api.open-meteo.com/v1/forecast';
-    if (config.openMeteoApiKey) {
-      base = 'https://customer-api.open-meteo.com/v1/forecast';
-      params.set('apikey', config.openMeteoApiKey);
+    const all = region.localities;
+    const first = all.filter((l) => l.id === region.defaultLocality);
+    const rest = all.filter((l) => l.id !== region.defaultLocality);
+    const groups = [first];
+    for (let i = 0; i < rest.length; i += 10) groups.push(rest.slice(i, i + 10));
+    let ok = 0;
+    const errors = [];
+    for (const [gi, locs] of groups.entries()) {
+      if (!locs.length) continue;
+      if (gi > 0) await sleep(2000);
+      try {
+        let data;
+        try { data = await getJson(url(locs)); } catch (e) {
+          if (e.status !== 429) throw e;
+          await sleep(20000);
+          data = await getJson(url(locs));
+        }
+        const arr = Array.isArray(data) ? data : [data];
+        if (arr.length !== locs.length) throw new Error(`Open-Meteo devolvió ${arr.length} puntos para ${locs.length} localidades`);
+        arr.forEach((r, i) => putSnapshot('open-meteo', locs[i].id, normalizeOpenMeteo(r), r.current?.time || null));
+        ok += arr.length;
+      } catch (e) {
+        errors.push(e.message);
+      }
     }
-    const data = await getJson(`${base}?${params}`);
-    const arr = Array.isArray(data) ? data : [data];
-    if (arr.length !== locs.length) throw new Error(`Open-Meteo devolvió ${arr.length} puntos para ${locs.length} localidades`);
-    arr.forEach((r, i) => putSnapshot('open-meteo', locs[i].id, normalizeOpenMeteo(r), r.current?.time || null));
-    return { items: arr.length, message: `${arr.length} localidades` };
+    if (errors.length) log?.('warn', `${errors.length} tanda(s) sin datos: ${errors[0]}`);
+    if (!ok) throw new Error(errors[0] || 'Sin datos');
+    return { items: ok, message: `${ok}/${all.length} localidades` };
   },
 };
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+function url(locs) {
+  const params = new URLSearchParams({
+    latitude: locs.map((l) => l.lat).join(','),
+    longitude: locs.map((l) => l.lon).join(','),
+    current: 'temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m',
+    daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant',
+    hourly: 'precipitation,precipitation_probability,weather_code,wind_gusts_10m,temperature_2m',
+    forecast_hours: '48',
+    timezone: config.timezone,
+    forecast_days: '7',
+    wind_speed_unit: 'kmh',
+  });
+  let base = 'https://api.open-meteo.com/v1/forecast';
+  if (config.openMeteoApiKey) {
+    base = 'https://customer-api.open-meteo.com/v1/forecast';
+    params.set('apikey', config.openMeteoApiKey);
+  }
+  return `${base}?${params}`;
+}
