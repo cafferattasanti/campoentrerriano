@@ -259,3 +259,14 @@ main:focus { outline: none; }
 @media (max-width: 520px) { .sanit div { grid-template-columns: 1fr; gap: 0; } }
 .grid > * { min-width: 0; }
 .prices td.num .sub { white-space: normal; }
+
+/* ---------- Parte del día (compartir por WhatsApp) ---------- */
+.btn.wa { background: #1f6b3a; border-color: #1f6b3a; color: #fff; }
+.btn.wa:hover { background: #185a30; }
+.btn.wa.secondary { background: var(--card); color: #1f6b3a; }
+.parte-cta { background: var(--card); border: 2px solid #1f6b3a; border-radius: var(--radius); padding: .2rem 1rem .6rem; }
+.parte-cta .small { margin: .5rem 0 0; }
+.parte-modal { position: fixed; inset: 0; z-index: 50; background: rgba(15, 20, 30, .72); display: flex; align-items: flex-start; justify-content: center; overflow-y: auto; padding: 1rem; }
+.parte-box { background: var(--card); border-radius: var(--radius); max-width: 460px; width: 100%; padding: 1rem; margin: auto 0; }
+.parte-t { font-family: var(--serif); margin: 0 0 .6rem; color: var(--navy); }
+.parte-img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 4px; }
