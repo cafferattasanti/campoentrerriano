@@ -1,0 +1,52 @@
+# Guarda una vez por día las visitas de la web en la rama "estadisticas" (archivo estadisticas/visitas.json).
+# Así el historial no se pierde aunque Render reinicie el servidor (el plan gratis no tiene disco permanente).
+name: Guardar estadisticas de visitas
+on:
+  schedule:
+    - cron: "50 2 * * *"   # 23:50 hora de Argentina
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  guardar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Preparar la rama estadisticas
+        run: |
+          git config --global user.name "estadisticas-bot"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git clone --depth 1 --branch estadisticas "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" repo; then
+            echo "rama existente"
+          else
+            git clone --depth 1 "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" repo
+            cd repo && git checkout --orphan estadisticas && git rm -rf . >/dev/null && cd ..
+          fi
+      - name: Descargar y sumar al historial
+        run: |
+          curl -fsS --max-time 120 --retry 3 --retry-delay 20 "https://campoentrerriano.onrender.com/api/estadisticas?dias=7" -o nuevo.json
+          mkdir -p repo/estadisticas
+          node -e '
+            const fs = require("fs");
+            const f = "repo/estadisticas/visitas.json";
+            const hist = fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, "utf8")) : { dias: {} };
+            const nuevo = JSON.parse(fs.readFileSync("nuevo.json", "utf8"));
+            const max = (a, b) => Math.max(a || 0, b || 0);
+            for (const d of nuevo.dias) {
+              const v = hist.dias[d.dia] || { visitas: 0, personas: 0, celular: 0, secciones: {} };
+              v.visitas = max(v.visitas, d.visitas); v.personas = max(v.personas, d.personas); v.celular = max(v.celular, d.celular);
+              for (const [k, n] of Object.entries(d.secciones || {})) v.secciones[k] = max(v.secciones[k], n);
+              hist.dias[d.dia] = v;
+            }
+            hist.actualizado = new Date().toISOString();
+            hist.nota = "Visitas por día de campoentrerriano.onrender.com. personas = visitantes distintos en el día. Si el servidor se reinició a mitad de un día, ese día puede quedar un poco por debajo del real.";
+            hist.dias = Object.fromEntries(Object.entries(hist.dias).sort());
+            fs.writeFileSync(f, JSON.stringify(hist, null, 1) + "\n");
+          '
+      - name: Guardar en GitHub
+        run: |
+          cd repo
+          git add estadisticas/visitas.json
+          git diff --cached --quiet && echo "sin cambios" && exit 0
+          git commit -m "Visitas al $(date -u +%F)"
+          git push origin estadisticas
