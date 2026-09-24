@@ -1,6 +1,6 @@
 // Service worker: permite ver la última información descargada aunque no haya señal.
 // Los datos siempre muestran su fecha de actualización, así que nunca se presentan como actuales si son viejos.
-const VERSION = 'campo-er-v2';
+const VERSION = 'campo-er-v3';
 const SHELL = ['/', '/css/app.css', '/js/app.js', '/icon.svg', '/manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {
@@ -12,7 +12,7 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
   if (e.request.method !== 'GET' || url.origin !== location.origin) return;
-  if (url.pathname.startsWith('/api/admin') || url.pathname === '/admin' || url.pathname.startsWith('/api/medicamentos')) return;
+  if (url.pathname.startsWith('/api/admin') || url.pathname === '/admin') return;
   if (url.pathname.startsWith('/api/')) {
     // Red primero; si no hay conexión, la última respuesta guardada.
     e.respondWith(fetch(e.request).then((r) => { if (r.ok) { const copy = r.clone(); caches.open(VERSION).then((c) => c.put(e.request, copy)); } return r; }).catch(() => caches.match(e.request).then((m) => m || new Response(JSON.stringify({ error: 'Sin conexión y sin datos guardados todavía.' }), { status: 503, headers: { 'Content-Type': 'application/json' } }))));
