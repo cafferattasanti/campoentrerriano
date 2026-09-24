@@ -13,7 +13,7 @@
 //  Calor: máxima ≥ 37 °C amarillo, ≥ 40 °C rojo.
 export const CRITERIOS = [
   'LLUEVE AHORA (rojo): el SMN observa lluvia en una estación cercana, o el modelo indica al menos 0,2 mm en la hora actual.',
-  'LLUVIA PREVISTA (rojo): 5 mm o más con probabilidad de 60 % o más, o 10 mm o más con probabilidad de 40 % o más. Si el modelo disponible no da probabilidad (MET Norway), 8 mm o más.',
+  'LLUVIA PREVISTA (rojo): 5 mm o más con probabilidad de 60 % o más, o 10 mm o más con probabilidad de 40 % o más.',
   'Posible lluvia (amarillo): probabilidad de 40 % o más y al menos 1 mm. Con menos no se avisa.',
   'Tormentas: probabilidad de 40 % o más. Granizo: cuando el modelo lo indica (es orientativo).',
   'Viento: ráfagas de 60 km/h (amarillo) u 80 km/h o más (rojo).',
@@ -62,8 +62,10 @@ export function computeAvisos({ om, obs = null, obsKm = null, now = new Date(), 
     const s = segment(hours, date);
     if (!s) continue;
     const when = s.from ? (s.from === s.to ? ` alrededor de las ${s.from}` : ` entre las ${s.from} y las ${s.to}`) : '';
-    // Sin dato de probabilidad (modelo MET Norway): se exige más cantidad para el rojo.
-    const strong = s.probKnown ? (s.mm >= 5 && s.prob >= 60) || (s.mm >= 10 && s.prob >= 40) : s.mm >= 8;
+    // Sin dato de probabilidad (respaldo MET Norway) NO se dan avisos de lluvia ni tormenta: sin probabilidad
+    // el aviso puede ser engañoso. Solo quedan viento, helada y calor.
+    if (!s.probKnown) { if (s.gust >= 60) out.push({ id: 'viento-' + name, level: s.gust >= 80 ? 'rojo' : 'amarillo', icon: '💨', title: `Viento fuerte ${name.toLowerCase()}`, detail: `Ráfagas de hasta ${s.gust} km/h.`, origin: `Pronóstico por modelo (${provider})`, date }); continue; }
+    const strong = (s.mm >= 5 && s.prob >= 60) || (s.mm >= 10 && s.prob >= 40);
     const probTxt = s.probKnown ? `, probabilidad ${s.prob} %` : '';
     if (strong) out.push({ id: 'lluvia-' + name, level: 'rojo', icon: '🌧️', title: `LLUVIA PREVISTA ${name}`, detail: `Unos ${fmt1(s.mm)} mm${probTxt}${when}.`, origin: `Pronóstico por modelo (${provider})`, date });
     else if ((s.probKnown ? s.prob >= 40 : true) && s.mm >= 1) out.push({ id: 'lluvia-' + name, level: 'amarillo', icon: '🌦️', title: `Posible lluvia ${name.toLowerCase()}`, detail: `Poca cantidad: unos ${fmt1(s.mm)} mm${probTxt}${when}.`, origin: `Pronóstico por modelo (${provider})`, date });
