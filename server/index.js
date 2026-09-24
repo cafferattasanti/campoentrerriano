@@ -12,6 +12,7 @@ import * as api from './api.js';
 import { handleAdmin } from './admin.js';
 import { isAdmin, checkPassword, sessionCookie, clearCookie, tooManyAttempts, adminEnabled } from './auth.js';
 import { startScheduler, initSources } from './scheduler.js';
+import { track, statsSummary } from './stats.js';
 
 const PUBLIC = resolve(ROOT, 'public');
 const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon', '.webmanifest': 'application/manifest+json', '.txt': 'text/plain; charset=utf-8' };
@@ -76,6 +77,8 @@ async function handle(req, res) {
     try {
       // --- Públicos (solo GET) ---
       if (req.method === 'GET') {
+        track(req, path, clientIp(req));
+        if (path === '/api/estadisticas') return send(200, statsSummary(q.dias));
         if (path === '/api/meta') return send(200, api.metaInfo());
         if (path === '/api/inicio') return send(200, api.inicio(q.loc));
         if (path === '/api/clima') return send(200, api.clima(q.loc));
