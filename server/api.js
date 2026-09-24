@@ -45,6 +45,9 @@ export function clima(locId) {
     current = { ...obsFresh, origin: 'smn-abiertos', originLabel: `Observado por el SMN en ${obsFresh.station}${station.km > 5 ? ` (a ${station.km} km)` : ''}` };
   } else if (sOm) {
     current = { ...sOm.data.current, origin: 'modelo', originLabel: `Estimado por modelo (Open-Meteo) para ${loc.name}. No es una medición.` };
+  } else if (obsFresh) {
+    // Respaldo si el modelo no está disponible: la observación oficial más cercana, aclarando la distancia.
+    current = { ...obsFresh, origin: 'smn-abiertos', originLabel: `Observado por el SMN en ${obsFresh.station} (a ${station.km} km de ${loc.name}).` };
   }
   const nearestObs = obsFresh && current?.origin === 'modelo' ? { station: obsFresh.station, km: station.km, temp: obsFresh.temp, weather: obsFresh.weather, observedAt: obsFresh.observedAt } : null;
   const avisos = computeAvisos({ om: sOm?.data, obs: obsFresh && station.km <= NEAR_STATION_KM ? obsFresh : null, obsKm: station.km });
@@ -71,6 +74,10 @@ export function clima(locId) {
   } else if (sOm?.data?.days?.length) {
     forecastOrigin = 'modelo';
     days = sOm.data.days.map((d) => ({ date: d.date, tMin: d.tMin, tMax: d.tMax, summary: d.weather, rainProbMax: d.rainProb, rainMm: d.rainMm, rainMmComplete: true, windMax: d.windMax, windDir: d.windDir, gustMax: d.gustMax, periods: [], model: null }));
+  } else if (sModel?.data?.days?.length) {
+    // Respaldo: pronóstico por modelo que publica el SMN para la estación más cercana.
+    forecastOrigin = 'smn-modelo';
+    days = sModel.data.days.map((d) => ({ date: d.date, tMin: d.tMin, tMax: d.tMax, summary: `Pronóstico por modelo del SMN para ${station.obsName}`, rainProbMax: null, rainMm: d.rainMm, rainMmComplete: true, windMax: d.windMaxKmh, windDir: null, gustMax: null, periods: [], model: null }));
   }
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' });
   days = days.filter((d) => d.date >= today);
@@ -86,7 +93,7 @@ export function clima(locId) {
     days,
     modelStation: sModel ? { name: station.obsName, days: sModel.data.days, file: sModel.data.file } : null,
     meta: {
-      pronostico: forecastOrigin === 'smn' ? meta('smn-pronostico', sFc) : meta('open-meteo', sOm),
+      pronostico: forecastOrigin === 'smn' ? meta('smn-pronostico', sFc) : forecastOrigin === 'smn-modelo' ? meta('smn-datos-abiertos', sModel) : meta('open-meteo', sOm),
       actual: current?.origin === 'smn' ? meta('smn-pronostico', sNow) : current?.origin === 'smn-abiertos' ? meta('smn-datos-abiertos', sObs) : meta('open-meteo', sOm),
       observacion: meta('smn-datos-abiertos', sObs),
       modelo: meta('open-meteo', sOm),
