@@ -46,6 +46,18 @@ export function track(req, path, ip) {
   } catch { /* el contador nunca debe romper la página */ }
 }
 
+// Eventos del "Parte del día" (cuántas veces se comparte y cuántos llegan desde WhatsApp). Solo totales.
+const EVENTOS = { compartir: 'parte-compartido', descargar: 'parte-descargado', texto: 'parte-texto', llegada: 'llegada-whatsapp' };
+export function trackEvento(req, accion) {
+  try {
+    const ua = req.headers['user-agent'] || '';
+    const key = EVENTOS[accion];
+    if (!key || !ua || BOT.test(ua)) return false;
+    stInc.run(today(), 'sec:' + key);
+    return true;
+  } catch { return false; }
+}
+
 export function statsSummary(days = 30) {
   const d = Math.min(Math.max(Number(days) || 30, 1), 400);
   const from = new Date(Date.now() - d * 864e5).toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' });
