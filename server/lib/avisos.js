@@ -13,7 +13,7 @@
 //  Calor: máxima ≥ 37 °C amarillo, ≥ 40 °C rojo.
 export const CRITERIOS = [
   'LLUEVE AHORA (rojo): el SMN observa lluvia en una estación cercana, o el modelo indica al menos 0,2 mm en la hora actual.',
-  'LLUVIA PREVISTA (rojo): 5 mm o más con probabilidad de 60 % o más, o 10 mm o más con probabilidad de 40 % o más.',
+  'LLUVIA PREVISTA (rojo): 5 mm o más con probabilidad de 60 % o más, o 10 mm o más con probabilidad de 40 % o más. Si el modelo disponible no da probabilidad (MET Norway), 8 mm o más.',
   'Posible lluvia (amarillo): probabilidad de 40 % o más y al menos 1 mm. Con menos no se avisa.',
   'Tormentas: probabilidad de 40 % o más. Granizo: cuando el modelo lo indica (es orientativo).',
   'Viento: ráfagas de 60 km/h (amarillo) u 80 km/h o más (rojo).',
@@ -29,17 +29,19 @@ function segment(hours, date) {
   const hs = hours.filter((h) => h.time.slice(0, 10) === date);
   if (!hs.length) return null;
   const mm = Math.round(hs.reduce((a, h) => a + (h.rainMm || 0), 0) * 10) / 10;
-  const prob = Math.max(0, ...hs.map((h) => h.rainProb || 0));
-  const wet = hs.filter((h) => (h.rainMm || 0) >= 0.3 && (h.rainProb || 0) >= 40);
-  const storm = hs.filter((h) => STORM.has(h.code) && (h.rainProb || 0) >= 40);
-  const hail = hs.filter((h) => HAIL.has(h.code) && (h.rainProb || 0) >= 40);
+  const probKnown = hs.some((h) => h.rainProb !== null && h.rainProb !== undefined);
+  const prob = probKnown ? Math.max(0, ...hs.map((h) => h.rainProb || 0)) : null;
+  const likely = (h) => !probKnown || (h.rainProb || 0) >= 40;
+  const wet = hs.filter((h) => (h.rainMm || 0) >= 0.3 && likely(h));
+  const storm = hs.filter((h) => STORM.has(h.code) && likely(h));
+  const hail = hs.filter((h) => HAIL.has(h.code) && likely(h));
   const gust = Math.max(0, ...hs.map((h) => h.gust || 0));
   const hr = (x) => x.time.slice(11, 13) + ' h';
-  return { date, mm, prob, from: wet[0] ? hr(wet[0]) : null, to: wet.length ? hr(wet[wet.length - 1]) : null, storm: storm.length ? hr(storm[0]) : null, hail: hail.length > 0, gust, hours: hs.length };
+  return { date, mm, prob, probKnown, from: wet[0] ? hr(wet[0]) : null, to: wet.length ? hr(wet[wet.length - 1]) : null, storm: storm.length ? hr(storm[0]) : null, hail: hail.length > 0, gust, hours: hs.length };
 }
 
 // om: snapshot normalizado de Open-Meteo para la localidad. obs: observación SMN cercana (o null). nowIso: hora actual.
-export function computeAvisos({ om, obs = null, obsKm = null, now = new Date() }) {
+export function computeAvisos({ om, obs = null, obsKm = null, now = new Date(), provider = 'Open-Meteo' }) {
   const out = [];
   if (!om) return out;
   const tz = 'America/Argentina/Buenos_Aires';
@@ -53,26 +55,28 @@ export function computeAvisos({ om, obs = null, obsKm = null, now = new Date() }
   const cur = om.current || {};
   const modelRain = (cur.precipitation ?? 0) >= 0.2 || RAIN_CODES.has(cur.code);
   if (obsRain) out.push({ id: 'llueve', level: 'rojo', icon: '🌧️', title: 'LLUEVE AHORA', detail: `El SMN informa «${obs.weather}» en ${obs.station}${obsKm ? ` (a ${obsKm} km)` : ''}.`, origin: 'Observación del SMN' });
-  else if (!obs && modelRain) out.push({ id: 'llueve', level: 'rojo', icon: '🌧️', title: 'LLUEVE AHORA', detail: `${cur.weather || 'Lluvia'}${cur.precipitation ? `: ${fmt1(cur.precipitation)} mm en la última hora` : ''}.`, origin: 'Estimado por modelo (Open-Meteo), no es una medición' });
+  else if (!obs && modelRain) out.push({ id: 'llueve', level: 'rojo', icon: '🌧️', title: 'LLUEVE AHORA', detail: `${cur.weather || 'Lluvia'}${cur.precipitation ? `: ${fmt1(cur.precipitation)} mm en la última hora` : ''}.`, origin: `Estimado por modelo (${provider}), no es una medición` });
 
   // 2) Hoy y mañana
   for (const [date, name] of [[today, 'HOY'], [tomorrow, 'MAÑANA']]) {
     const s = segment(hours, date);
     if (!s) continue;
     const when = s.from ? (s.from === s.to ? ` alrededor de las ${s.from}` : ` entre las ${s.from} y las ${s.to}`) : '';
-    const strong = (s.mm >= 5 && s.prob >= 60) || (s.mm >= 10 && s.prob >= 40);
-    if (strong) out.push({ id: 'lluvia-' + name, level: 'rojo', icon: '🌧️', title: `LLUVIA PREVISTA ${name}`, detail: `Unos ${fmt1(s.mm)} mm, probabilidad ${s.prob} %${when}.`, origin: 'Pronóstico por modelo (Open-Meteo)', date });
-    else if (s.prob >= 40 && s.mm >= 1) out.push({ id: 'lluvia-' + name, level: 'amarillo', icon: '🌦️', title: `Posible lluvia ${name.toLowerCase()}`, detail: `Poca cantidad: unos ${fmt1(s.mm)} mm, probabilidad ${s.prob} %${when}.`, origin: 'Pronóstico por modelo (Open-Meteo)', date });
-    if (s.storm) out.push({ id: 'tormenta-' + name, level: strong ? 'rojo' : 'amarillo', icon: '⛈️', title: `Tormentas ${name.toLowerCase()}`, detail: `Posibles tormentas desde las ${s.storm}${s.hail ? '. El modelo indica posible granizo (orientativo)' : ''}.`, origin: 'Pronóstico por modelo (Open-Meteo)', date });
-    else if (s.hail) out.push({ id: 'granizo-' + name, level: 'amarillo', icon: '🧊', title: `Posible granizo ${name.toLowerCase()}`, detail: 'El modelo indica posible granizo (orientativo).', origin: 'Pronóstico por modelo (Open-Meteo)', date });
-    if (s.gust >= 60) out.push({ id: 'viento-' + name, level: s.gust >= 80 ? 'rojo' : 'amarillo', icon: '💨', title: `Viento fuerte ${name.toLowerCase()}`, detail: `Ráfagas de hasta ${s.gust} km/h.`, origin: 'Pronóstico por modelo (Open-Meteo)', date });
+    // Sin dato de probabilidad (modelo MET Norway): se exige más cantidad para el rojo.
+    const strong = s.probKnown ? (s.mm >= 5 && s.prob >= 60) || (s.mm >= 10 && s.prob >= 40) : s.mm >= 8;
+    const probTxt = s.probKnown ? `, probabilidad ${s.prob} %` : '';
+    if (strong) out.push({ id: 'lluvia-' + name, level: 'rojo', icon: '🌧️', title: `LLUVIA PREVISTA ${name}`, detail: `Unos ${fmt1(s.mm)} mm${probTxt}${when}.`, origin: `Pronóstico por modelo (${provider})`, date });
+    else if ((s.probKnown ? s.prob >= 40 : true) && s.mm >= 1) out.push({ id: 'lluvia-' + name, level: 'amarillo', icon: '🌦️', title: `Posible lluvia ${name.toLowerCase()}`, detail: `Poca cantidad: unos ${fmt1(s.mm)} mm${probTxt}${when}.`, origin: `Pronóstico por modelo (${provider})`, date });
+    if (s.storm) out.push({ id: 'tormenta-' + name, level: strong ? 'rojo' : 'amarillo', icon: '⛈️', title: `Tormentas ${name.toLowerCase()}`, detail: `Posibles tormentas desde las ${s.storm}${s.hail ? '. El modelo indica posible granizo (orientativo)' : ''}.`, origin: `Pronóstico por modelo (${provider})`, date });
+    else if (s.hail) out.push({ id: 'granizo-' + name, level: 'amarillo', icon: '🧊', title: `Posible granizo ${name.toLowerCase()}`, detail: 'El modelo indica posible granizo (orientativo).', origin: `Pronóstico por modelo (${provider})`, date });
+    if (s.gust >= 60) out.push({ id: 'viento-' + name, level: s.gust >= 80 ? 'rojo' : 'amarillo', icon: '💨', title: `Viento fuerte ${name.toLowerCase()}`, detail: `Ráfagas de hasta ${s.gust} km/h.`, origin: `Pronóstico por modelo (${provider})`, date });
   }
 
   // 3) Heladas y calor (mínima/máxima diaria de hoy y mañana)
   for (const d of (om.days || []).filter((x) => x.date === today || x.date === tomorrow)) {
     const name = d.date === today ? 'hoy' : 'mañana';
-    if (d.tMin !== null && d.tMin <= 2) out.push({ id: 'helada-' + name, level: d.tMin <= -2 ? 'rojo' : 'amarillo', icon: '❄️', title: d.tMin <= -2 ? `Helada fuerte ${name}` : `Posible helada ${name}`, detail: `Mínima prevista de ${fmt1(d.tMin)} °C.`, origin: 'Pronóstico por modelo (Open-Meteo)', date: d.date });
-    if (d.tMax !== null && d.tMax >= 37) out.push({ id: 'calor-' + name, level: d.tMax >= 40 ? 'rojo' : 'amarillo', icon: '🌡️', title: `Calor extremo ${name}`, detail: `Máxima prevista de ${fmt1(d.tMax)} °C.`, origin: 'Pronóstico por modelo (Open-Meteo)', date: d.date });
+    if (d.tMin !== null && d.tMin <= 2) out.push({ id: 'helada-' + name, level: d.tMin <= -2 ? 'rojo' : 'amarillo', icon: '❄️', title: d.tMin <= -2 ? `Helada fuerte ${name}` : `Posible helada ${name}`, detail: `Mínima prevista de ${fmt1(d.tMin)} °C.`, origin: `Pronóstico por modelo (${provider})`, date: d.date });
+    if (d.tMax !== null && d.tMax >= 37) out.push({ id: 'calor-' + name, level: d.tMax >= 40 ? 'rojo' : 'amarillo', icon: '🌡️', title: `Calor extremo ${name}`, detail: `Máxima prevista de ${fmt1(d.tMax)} °C.`, origin: `Pronóstico por modelo (${provider})`, date: d.date });
   }
   // Rojos primero
   return out.sort((a, b) => (a.level === 'rojo' ? 0 : 1) - (b.level === 'rojo' ? 0 : 1));
