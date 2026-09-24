@@ -6,7 +6,26 @@
 export default {
   id: 'entre-rios',
   name: 'Entre Ríos',
-  defaultLocality: 'parana',
+  defaultLocality: 'gualeguay',
+  // Localidades del departamento Gualeguay y vecinas (prioridad 1 en noticias).
+  newsLocal: ['gualeguay', 'general galarza', 'gonzalez calderon', 'aldea asuncion', 'puerto ruiz', 'estacion lazo', 'islas del ibicuy', 'ibicuy', 'larroque', 'rosario del tala'],
+  // Estaciones de altura de ríos de la Prefectura Naval en la provincia (primero el río Gualeguay).
+  rivers: [
+    { port: 'PUERTO RUIZ', river: 'GUALEGUAY', label: 'Río Gualeguay en Puerto Ruiz (Gualeguay)', main: true },
+    { port: 'GUALEGUAYCHU', river: 'GUALEGUAYCHU', label: 'Río Gualeguaychú en Gualeguaychú' },
+    { port: 'IBICUY', river: 'IBICUY', label: 'Río Ibicuy en Ibicuy' },
+    { port: 'VICTORIA', river: 'PARANA', label: 'Paraná en Victoria' },
+    { port: 'DIAMANTE', river: 'PARANA', label: 'Paraná en Diamante' },
+    { port: 'PARANA', river: 'PARANA', label: 'Paraná en Paraná' },
+    { port: 'HERNANDARIAS', river: 'PARANA', label: 'Paraná en Hernandarias' },
+    { port: 'SANTA ELENA', river: 'PARANA', label: 'Paraná en Santa Elena' },
+    { port: 'LA PAZ', river: 'PARANA', label: 'Paraná en La Paz' },
+    { port: 'PARANACITO', river: 'URUGUAY', label: 'Uruguay en Paranacito' },
+    { port: 'CONCEPCION DEL URUGUAY', river: 'URUGUAY', label: 'Uruguay en Concepción del Uruguay' },
+    { port: 'COLON', river: 'URUGUAY', label: 'Uruguay en Colón' },
+    { port: 'CONCORDIA', river: 'URUGUAY', label: 'Uruguay en Concordia' },
+    { port: 'FEDERACION', river: 'URUGUAY', label: 'Uruguay en Federación' },
+  ],
   departments: [
     'Colón', 'Concordia', 'Diamante', 'Federación', 'Federal', 'Feliciano', 'Gualeguay', 'Gualeguaychú',
     'Islas del Ibicuy', 'La Paz', 'Nogoyá', 'Paraná', 'San Salvador', 'Tala', 'Uruguay', 'Victoria', 'Villaguay',
