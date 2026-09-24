@@ -101,6 +101,8 @@ export function clima(locId) {
     nearestObs,
     avisos,
     criterios: CRITERIOS,
+    modelo: sOm ? { fuente: mdl.label, conProbabilidad: mdl.source !== 'met-no', relevo: !!sOm.data?.relevo } : null,
+    smnOficialUrl: `https://www.smn.gob.ar/pronostico/?loc=${loc.smnId}`,
     forecastOrigin,
     days,
     modelStation: sModel ? { name: station.obsName, days: sModel.data.days, file: sModel.data.file } : null,
@@ -410,7 +412,7 @@ export function inicio(locId) {
   const r = rios();
   return {
     locality: c.locality,
-    clima: { current: c.current, nearestObs: c.nearestObs, today: c.days[0] || null, tomorrow: c.days[1] || null, meta: c.meta.actual, metaPronostico: c.meta.pronostico, forecastOrigin: c.forecastOrigin },
+    clima: { current: c.current, nearestObs: c.nearestObs, modelo: c.modelo, smnOficialUrl: c.smnOficialUrl, today: c.days[0] || null, tomorrow: c.days[1] || null, meta: c.meta.actual, metaPronostico: c.meta.pronostico, forecastOrigin: c.forecastOrigin },
     avisos: c.avisos,
     alertas: { count: a.alerts.length, top: a.alerts.slice(0, 2), meta: a.meta, noAlertsText: a.noAlertsText },
     sanitarias: { top: a.sanitarias.items.filter((x) => x.enER || x.importancia.nivel === 'alta').slice(0, 2), enER: a.sanitarias.enER, vacioTexto: a.sanitarias.vacioTexto, meta: a.sanitarias.meta },
