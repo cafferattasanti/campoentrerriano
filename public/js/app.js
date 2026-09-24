@@ -137,6 +137,14 @@
     </div>`;
   }
 
+  // Botón del "Parte del día" (imagen para compartir por WhatsApp; ver js/parte.js).
+  const parteBtn = `<section class="parte-cta mt"><button class="btn wa" type="button" data-parte>📲 Compartir el parte del día</button>
+      <p class="small">Una imagen con novillo, vaca, ternero, dólar, granos, lluvia y río, lista para mandar a tus grupos de WhatsApp.</p></section>`;
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest && e.target.closest('[data-parte]');
+    if (b && window.CampoParte) window.CampoParte.abrir(loc());
+  });
+
   // Franja fija de hacienda (en todas las páginas).
   const strip = document.getElementById('fijados');
   async function loadStrip() {
@@ -234,6 +242,7 @@
         <h4 class="sub-h">Sanitarias (SENASA)</h4>${sanit}
         <a class="btn secondary" href="#/alertas">Ver todas las alertas</a></section>
       <section class="card earth mt" aria-labelledby="h-hac"><h3 id="h-hac">🐂 Hacienda</h3>${hac}<a class="btn" href="#/mercado">💰 Ver mercado completo</a></section>
+      ${parteBtn}
       <div class="grid grid-2 mt">
         <section class="card earth" aria-labelledby="h-granos"><h3 id="h-granos">🌾 Granos</h3>${gr}<a class="btn secondary" href="#/mercado#granos">Ver granos</a></section>
         <section class="card" aria-labelledby="h-dolar"><h3 id="h-dolar">💵 Dólar</h3>${dol}<a class="btn secondary" href="#/dolar">Ver dólar</a></section>
@@ -417,6 +426,7 @@
       <h2 class="page-title">💰 Mercado</h2>
       <p class="lead">Precios de referencia publicados por los mercados. No son precios de compra garantizados.</p>
       <section class="card earth"><h3>🐂 Novillo, vaca y ternero</h3>${hac}${status(d.meta.indices)}</section>
+      ${parteBtn}
       <section class="card earth mt"><h3>Hacienda en pie</h3>${enPie}</section>
       <section class="card earth mt"><h3>Faena por categoría (Cañuelas)</h3>${cat || ''}${status(d.meta.hacienda)}</section>
       <section class="card earth mt"><h3>Invernada y cría (ROSGAN)</h3>${invHtml}${status(d.meta.rosgan)}</section>
