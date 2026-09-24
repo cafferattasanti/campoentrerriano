@@ -1,0 +1,33 @@
+# Cada hora descarga el pronóstico de Open-Meteo (con probabilidad de lluvia) y lo deja en la rama "datos".
+# La web pública lo usa cuando Open-Meteo rechaza su servidor por exceso de consultas en la IP compartida.
+name: Datos de clima (relevo Open-Meteo)
+on:
+  schedule:
+    - cron: "7 * * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: datos-clima
+  cancel-in-progress: true
+jobs:
+  relevo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Descargar pronóstico
+        run: node scripts/relevo-open-meteo.mjs
+      - name: Publicar en la rama datos
+        run: |
+          cd salida
+          git init -q -b datos
+          git config user.name "datos-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          mkdir -p datos && mv open-meteo.json datos/
+          git add datos/open-meteo.json
+          git commit -q -m "Pronóstico $(date -u +%FT%H:%MZ)"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" datos:datos
