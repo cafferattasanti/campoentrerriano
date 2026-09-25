@@ -122,6 +122,9 @@ npm run update-now   # forzar la actualización de todas las fuentes y ver el re
 
 No hace falta entrar todos los días: todo se actualiza solo.
 
+### 4.1 Parte del día (compartir por WhatsApp)
+Botón verde «Compartir el parte del día» en Inicio y en Mercado. Arma en el mismo teléfono (canvas, `public/js/parte.js`) una imagen 1080×1390 con novillo, vaca, ternero (con variación), dólar BNA, soja/maíz/trigo, clima de hoy y mañana con lluvia, y el río Gualeguay en Puerto Ruiz, más fecha, hora, fuentes y la dirección de la web. Opciones: compartir la imagen (menú del celular → WhatsApp), mandar solo texto por WhatsApp o descargarla. Si no hay precios de hacienda, no deja compartir una imagen vacía. En `/api/estadisticas` se cuentan (solo totales) `parte-compartido`, `parte-texto`, `parte-descargado` y `llegada-whatsapp` (visitas que entran por el enlace `?p=wa` del texto).
+
 ---
 
 ## 5. Cómo crecer
@@ -134,6 +137,9 @@ No hace falta entrar todos los días: todo se actualiza solo.
 
 ## 6. Límites conocidos (honestidad sobre los datos)
 - **Hacienda:** Cañuelas publica solo los días de remate (lunes a viernes, no todos); entre remates se muestra el último con su fecha. El ternero (ROSGAN) es **mensual**. La variación compara con el remate anterior del mismo mercado.
+- **Río de cada localidad (inicio y parte del día):** se muestra la estación del mismo río asignada en `rioLocal` (`server/regions/entre-rios.js`). Las localidades que no están sobre un río con escala (ej. Federal, Nogoyá, Crespo) muestran la estación más cercana con la distancia y una aclaración. La lista completa sigue en Ríos.
+- **Noticias locales:** el único diario local conectado es El Debate Pregón (Gualeguay). Para otras localidades, «local» son las notas que nombran a la localidad o a su departamento; las notas locales de Gualeguay pasan después de las provinciales.
+- **Dólar mayorista:** la hora que se muestra es la que publica DolarApi.com para ese valor (suele actualizarlo una vez por la mañana), no la hora de consulta, que es cada 30 minutos.
 - **Dólar blue:** es un valor del mercado informal relevado por DolarApi.com; se rotula así.
 - **Avisos de lluvia:** salen de un modelo numérico (Open-Meteo), no del SMN. Las alertas oficiales siguen siendo las del SMN y se muestran aparte. Gualeguay no tiene estación del SMN con datos abiertos (la más cercana es Gualeguaychú, a ~70 km).
 - **Open-Meteo:** gratis solo para uso **no comercial**. Si la web pasa a tener publicidad, hay que contratar el plan comercial y cargar `OPEN_METEO_API_KEY`.
