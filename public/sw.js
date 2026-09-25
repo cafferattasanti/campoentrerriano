@@ -1,6 +1,6 @@
 // Service worker: permite ver la última información descargada aunque no haya señal.
 // Los datos siempre muestran su fecha de actualización, así que nunca se presentan como actuales si son viejos.
-const VERSION = 'campo-er-v4';
+const VERSION = 'campo-er-v5';
 const SHELL = ['/', '/css/app.css', '/js/app.js', '/js/parte.js', '/icon.svg', '/manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {
