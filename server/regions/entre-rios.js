@@ -9,24 +9,33 @@ export default {
   defaultLocality: 'gualeguay',
   // Localidades del departamento Gualeguay y vecinas (prioridad 1 en noticias).
   newsLocal: ['gualeguay', 'general galarza', 'gonzalez calderon', 'aldea asuncion', 'puerto ruiz', 'estacion lazo', 'islas del ibicuy', 'ibicuy', 'larroque', 'rosario del tala'],
-  // Estaciones de altura de ríos de la Prefectura Naval en la provincia (primero el río Gualeguay).
+  // Estaciones de altura de ríos (Prefectura Naval y Dirección de Hidráulica), primero el río Gualeguay.
+  // lat/lon: ubicación aproximada de la escala (el puerto o el puente de cada localidad), para elegir la más cercana.
   rivers: [
-    { port: 'PUERTO RUIZ', river: 'GUALEGUAY', label: 'Río Gualeguay en Puerto Ruiz (Gualeguay)', main: true, hid: 'PR' },
-    { port: null, river: 'GUALEGUAY', label: 'Río Gualeguay en Rosario del Tala (aguas arriba de Gualeguay)', hid: 'RT' },
-    { port: 'GUALEGUAYCHU', river: 'GUALEGUAYCHU', label: 'Río Gualeguaychú en Gualeguaychú', ina: 'Gualeguaychú' },
-    { port: 'IBICUY', river: 'IBICUY', label: 'Río Ibicuy en Ibicuy', ina: 'Ibicuy' },
-    { port: 'VICTORIA', river: 'PARANA', label: 'Paraná en Victoria', ina: 'Victoria' },
-    { port: 'DIAMANTE', river: 'PARANA', label: 'Paraná en Diamante', ina: 'Diamante' },
-    { port: 'PARANA', river: 'PARANA', label: 'Paraná en Paraná', ina: 'Paraná' },
-    { port: 'HERNANDARIAS', river: 'PARANA', label: 'Paraná en Hernandarias', ina: 'Hernandarias' },
-    { port: 'SANTA ELENA', river: 'PARANA', label: 'Paraná en Santa Elena', ina: 'Santa Elena' },
-    { port: 'LA PAZ', river: 'PARANA', label: 'Paraná en La Paz', ina: 'La Paz' },
-    { port: 'PARANACITO', river: 'URUGUAY', label: 'Uruguay en Paranacito' },
-    { port: 'CONCEPCION DEL URUGUAY', river: 'URUGUAY', label: 'Uruguay en Concepción del Uruguay', ina: 'Concepción del Uruguay' },
-    { port: 'COLON', river: 'URUGUAY', label: 'Uruguay en Colón', ina: 'Colón' },
-    { port: 'CONCORDIA', river: 'URUGUAY', label: 'Uruguay en Concordia', ina: 'Concordia' },
-    { port: 'FEDERACION', river: 'URUGUAY', label: 'Uruguay en Federación', ina: 'Federación' },
+    { port: 'PUERTO RUIZ', river: 'GUALEGUAY', label: 'Río Gualeguay en Puerto Ruiz (Gualeguay)', id: 'puerto-ruiz', lat: -33.216, lon: -59.363, main: true, hid: 'PR' },
+    { port: null, river: 'GUALEGUAY', label: 'Río Gualeguay en Rosario del Tala (aguas arriba de Gualeguay)', id: 'rosario-del-tala', lat: -32.31, lon: -59.17, hid: 'RT' },
+    { port: 'GUALEGUAYCHU', river: 'GUALEGUAYCHU', label: 'Río Gualeguaychú en Gualeguaychú', id: 'gualeguaychu', lat: -33.01, lon: -58.5, ina: 'Gualeguaychú' },
+    { port: 'IBICUY', river: 'IBICUY', label: 'Río Ibicuy en Ibicuy', id: 'ibicuy', lat: -33.74, lon: -59.155, ina: 'Ibicuy' },
+    { port: 'VICTORIA', river: 'PARANA', label: 'Paraná en Victoria', id: 'victoria', lat: -32.62, lon: -60.16, ina: 'Victoria' },
+    { port: 'DIAMANTE', river: 'PARANA', label: 'Paraná en Diamante', id: 'diamante', lat: -32.07, lon: -60.645, ina: 'Diamante' },
+    { port: 'PARANA', river: 'PARANA', label: 'Paraná en Paraná', id: 'parana', lat: -31.73, lon: -60.53, ina: 'Paraná' },
+    { port: 'HERNANDARIAS', river: 'PARANA', label: 'Paraná en Hernandarias', id: 'hernandarias', lat: -31.23, lon: -59.985, ina: 'Hernandarias' },
+    { port: 'SANTA ELENA', river: 'PARANA', label: 'Paraná en Santa Elena', id: 'santa-elena', lat: -30.95, lon: -59.8, ina: 'Santa Elena' },
+    { port: 'LA PAZ', river: 'PARANA', label: 'Paraná en La Paz', id: 'la-paz', lat: -30.74, lon: -59.65, ina: 'La Paz' },
+    { port: 'PARANACITO', river: 'URUGUAY', label: 'Uruguay en Paranacito', id: 'paranacito', lat: -33.715, lon: -58.66 },
+    { port: 'CONCEPCION DEL URUGUAY', river: 'URUGUAY', label: 'Uruguay en Concepción del Uruguay', id: 'concepcion-del-uruguay', lat: -32.485, lon: -58.23, ina: 'Concepción del Uruguay' },
+    { port: 'COLON', river: 'URUGUAY', label: 'Uruguay en Colón', id: 'colon', lat: -32.22, lon: -58.135, ina: 'Colón' },
+    { port: 'CONCORDIA', river: 'URUGUAY', label: 'Uruguay en Concordia', id: 'concordia', lat: -31.39, lon: -58.01, ina: 'Concordia' },
+    { port: 'FEDERACION', river: 'URUGUAY', label: 'Uruguay en Federación', id: 'federacion', lat: -31.0, lon: -57.9, ina: 'Federación' },
   ],
+  // Río de cada localidad (inicio y parte del día): la estación del MISMO río más cercana a la localidad.
+  // Las localidades que no están sobre un río con escala usan la estación más cercana (se aclara en pantalla).
+  rioLocal: {
+    gualeguay: 'puerto-ruiz', 'rosario-del-tala': 'rosario-del-tala', villaguay: 'rosario-del-tala',
+    gualeguaychu: 'gualeguaychu', ibicuy: 'ibicuy', 'villa-paranacito': 'paranacito',
+    parana: 'parana', diamante: 'diamante', victoria: 'victoria', 'la-paz': 'la-paz', 'santa-elena': 'santa-elena',
+    'concepcion-del-uruguay': 'concepcion-del-uruguay', colon: 'colon', concordia: 'concordia', federacion: 'federacion', chajari: 'federacion',
+  },
   departments: [
     'Colón', 'Concordia', 'Diamante', 'Federación', 'Federal', 'Feliciano', 'Gualeguay', 'Gualeguaychú',
     'Islas del Ibicuy', 'La Paz', 'Nogoyá', 'Paraná', 'San Salvador', 'Tala', 'Uruguay', 'Victoria', 'Villaguay',

@@ -15,7 +15,7 @@ export function findLocality(id) {
   return r.localities.find((l) => l.id === id) || r.localities.find((l) => l.id === r.defaultLocality);
 }
 
-function dist(a, b) {
+export function dist(a, b) {
   const dx = (a.lon - b.lon) * Math.cos(((a.lat + b.lat) / 2) * Math.PI / 180);
   const dy = a.lat - b.lat;
   return Math.sqrt(dx * dx + dy * dy) * 111; // km aprox.
