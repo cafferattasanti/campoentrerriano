@@ -32,7 +32,7 @@ export default {
   // Las localidades que no están sobre un río con escala usan la estación más cercana (se aclara en pantalla).
   rioLocal: {
     gualeguay: 'puerto-ruiz', 'rosario-del-tala': 'rosario-del-tala', villaguay: 'rosario-del-tala',
-    gualeguaychu: 'gualeguaychu', ibicuy: 'ibicuy', 'villa-paranacito': 'paranacito',
+    gualeguaychu: 'gualeguaychu', urdinarrain: 'gualeguaychu', ibicuy: 'ibicuy', 'villa-paranacito': 'paranacito',
     parana: 'parana', diamante: 'diamante', victoria: 'victoria', 'la-paz': 'la-paz', 'santa-elena': 'santa-elena',
     'concepcion-del-uruguay': 'concepcion-del-uruguay', colon: 'colon', concordia: 'concordia', federacion: 'federacion', chajari: 'federacion',
   },
