@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { ROOT } from './config.js';
-import { currentRegion, findLocality, nearestStation } from './regions/index.js';
+import { currentRegion, findLocality, nearestStation, dist } from './regions/index.js';
 import { getSnapshot, listNews, listManual, getSetting, allSourceStates } from './db.js';
 import { meta } from './lib/meta.js';
 import { NEWS_CATEGORIES, NEWS_ZONES, relevance, dedupeKey } from './lib/news-classify.js';
@@ -268,7 +268,40 @@ function riverStatus(r) {
   if (r.height >= r.alert - 0.5) return { key: 'cerca', label: 'Cerca del nivel de alerta' };
   return { key: 'normal', label: 'Por debajo del nivel de alerta' };
 }
+const RIO_NOMBRE = { GUALEGUAY: 'Río Gualeguay', GUALEGUAYCHU: 'Río Gualeguaychú', IBICUY: 'Río Ibicuy', PARANA: 'Río Paraná', URUGUAY: 'Río Uruguay' };
+function rioTitulo(w) {
+  const lugar = (w.label.split(' en ')[1] || '').replace(/\s*\(.*\)\s*$/, '');
+  return `${RIO_NOMBRE[w.river] || w.river} en ${lugar}`;
+}
+
+// Río para una localidad: la estación del mismo río asignada en la región (rioLocal) o, si la localidad no está sobre
+// un río con escala, la más cercana. Si la elegida no tiene dato, la más cercana que sí tenga (se aclara en pantalla).
+export function rioDeLocalidad(locId, r = riosData()) {
+  const region = currentRegion();
+  const loc = findLocality(locId);
+  const conDato = r.all.filter((x) => !x.missing);
+  const cerca = (lista) => lista.map((x) => ({ x, km: Math.round(dist(loc, region.rivers.find((w) => w.id === x.id))) })).sort((a, b) => a.km - b.km)[0] || null;
+  const asignadaId = (region.rioLocal || {})[loc.id] || null;
+  const asignada = asignadaId ? r.all.find((x) => x.id === asignadaId) : null;
+  let elegida = null;
+  let motivo;
+  if (asignada && !asignada.missing) { elegida = { x: asignada, km: Math.round(dist(loc, region.rivers.find((w) => w.id === asignada.id))) }; motivo = 'propio'; }
+  else { elegida = cerca(conDato); motivo = asignada ? 'sin-dato' : 'cercana'; }
+  if (!elegida) return asignada ? { ...asignada, relacion: 'propio', nota: null } : null;
+  const e = elegida.x;
+  const nota = motivo === 'propio' ? null
+    : motivo === 'sin-dato' ? `${asignada.titulo} no tiene lecturas recientes publicadas. Se muestra la estación con dato más cercana (${e.titulo}, a ${elegida.km} km de ${loc.name}).`
+    : `${loc.name} no está sobre un río con escala publicada. Se muestra la estación más cercana: ${e.titulo}, a ${elegida.km} km.`;
+  return { ...e, relacion: motivo, km: elegida.km, nota };
+}
+
+// Respuesta de /api/rios (sin la lista interna completa).
 export function rios() {
+  const { all, ...pub } = riosData();
+  return pub;
+}
+
+function riosData() {
   const region = currentRegion();
   const sp = getSnapshot('prefectura-rios', 'entre-rios');
   const sh = getSnapshot('hidraulica-rios', 'entre-rios');
@@ -298,14 +331,21 @@ export function rios() {
     const out = { ...r, label: w.label, main: !!w.main, hoursOld: hoursOld(r.at) };
     out.stale = out.hoursOld === null || out.hoursOld > (r.dateOnly ? 60 : 36);
     out.status = riverStatus(out);
-    out.otherSource = cands[1] ? { fuente: cands[1].fuente, height: cands[1].height, at: cands[1].at, dateOnly: cands[1].dateOnly } : null;
+    // Segunda fuente: solo si es una lectura propia y actual. Si es más vieja que la principal (en la práctica, la misma
+    // lectura anterior que ya publicó el otro organismo) o repite el valor anterior, no se muestra.
+    const o = cands[1];
+    const repiteAnterior = o && r.previous !== null && r.previous !== undefined && Math.abs(o.height - r.previous) < 0.005;
+    out.otherSource = o && Date.parse(o.at) >= Date.parse(r.at) && !repiteAnterior ? { fuente: o.fuente, height: o.height, at: o.at, dateOnly: o.dateOnly } : null;
     return out;
-  }).filter((r) => !r.missing || r.main);
+  });
+  const all = stations.map((r, i) => ({ ...r, id: region.rivers[i].id, titulo: rioTitulo(region.rivers[i]) }));
   const metaP = meta('prefectura-rios', sp);
   const metaH = meta('hidraulica-rios', sh);
+  const visibles = all.filter((r) => !r.missing || r.main);
   return {
-    main: stations.find((r) => r.main) || null,
-    stations,
+    main: visibles.find((r) => r.main) || null,
+    stations: visibles,
+    all,
     url: URL_ALTURAS,
     urlHidraulica: PAGE_HID,
     nota: 'Alturas en metros según la escala (hidrómetro) de cada lugar; no es la profundidad del río. Cada estación muestra la lectura más reciente entre Prefectura Naval (cada ~12 h) y la Dirección de Hidráulica de Entre Ríos (datos del INA y escalas propias en el río Gualeguay, lectura diaria). «Alerta» y «Evacuación» son los niveles de referencia que publica cada organismo. Las escalas de distintos organismos pueden no coincidir exactamente.',
@@ -364,9 +404,31 @@ export function sanitarias() {
 }
 
 // ------------------------------------------------------------------ NOTICIAS
-const ZONE_RANK = { local: 0, departamentos: 1, provincia: 2, nacional: 3 };
-export function noticias({ zone = null, limit = 40 } = {}) {
+const ZONE_RANK = { local: 0, departamentos: 1, provincia: 2, otraLocalidad: 2.5, nacional: 3 };
+// Nombres que también son ríos, departamentos o palabras comunes: solo cuentan con contexto entrerriano.
+const LOC_AMBIGUOS = ['parana', 'victoria', 'colon', 'la paz', 'federal', 'federacion', 'diamante', 'concordia', 'santa elena', 'san salvador', 'crespo', 'viale', 'segui', 'bovril', 'ibicuy'];
+const CONTEXTO_ER = /entre rios|entrerrian|departamento|municipio|intendente|localidad|ciudad de/;
+
+// ¿La localidad elegida usa la fuente local de Gualeguay (El Debate Pregón)? Solo Gualeguay y su zona.
+function usaLocalGualeguay(loc, region) {
+  const n = normalize(loc.name);
+  return (region.newsLocal || []).includes(n);
+}
+function mencionaLocalidad(texto, loc) {
+  const t = ' ' + normalize(texto) + ' ';
+  const has = (w) => new RegExp('(?:^|[^a-z])' + w + '(?:[^a-z]|$)').test(t);
+  const n = normalize(loc.name);
+  if (has('departamento ' + normalize(loc.department)) || has('dpto\\.? ' + normalize(loc.department))) return true;
+  if (!has(n)) return false;
+  return !LOC_AMBIGUOS.includes(n) || CONTEXTO_ER.test(t);
+}
+
+export function noticias({ zone = null, limit = 40, loc: locId = null } = {}) {
   const region = currentRegion();
+  const loc = locId ? findLocality(locId) : findLocality(region.defaultLocality);
+  // Para localidades fuera de la zona de Gualeguay, "local" = notas que nombran a esa localidad (o su departamento).
+  // Las notas locales de Gualeguay pasan a "departamentos" y van después de las provinciales.
+  const propia = !usaLocalGualeguay(loc, region);
   const feeds = Object.fromEntries(FEEDS.map((f) => [f.id, f]));
   const cutoff = new Date(Date.now() - 30 * 864e5).toISOString();
   const seen = new Set();
@@ -378,23 +440,32 @@ export function noticias({ zone = null, limit = 40 } = {}) {
     const key = dedupeKey(n.title);
     if (seen.has(key)) continue;
     seen.add(key);
-    items.push({ id: n.id, title: n.title, url: n.url, summary: n.summary, publishedAt: n.published_at, source: n.source, sourceName: n.source_name, zone: rel.zone, manual: !!n.manual, pinned: !!n.pinned });
+    let z = rel.zone;
+    let rank = ZONE_RANK[z];
+    if (propia) {
+      if (mencionaLocalidad(`${n.title} ${n.summary || ''}`, loc)) { z = 'local'; rank = ZONE_RANK.local; }
+      else if (z === 'local') { z = 'departamentos'; rank = ZONE_RANK.otraLocalidad; }
+    }
+    items.push({ id: n.id, title: n.title, url: n.url, summary: n.summary, publishedAt: n.published_at, source: n.source, sourceName: n.source_name, zone: z, rank, manual: !!n.manual, pinned: !!n.pinned });
   }
-  items.sort((a, b) => (b.pinned - a.pinned) || ZONE_RANK[a.zone] - ZONE_RANK[b.zone] || (b.publishedAt || '').localeCompare(a.publishedAt || ''));
-  const filtered = zone ? items.filter((i) => i.zone === zone) : items;
+  items.sort((a, b) => (b.pinned - a.pinned) || a.rank - b.rank || (b.publishedAt || '').localeCompare(a.publishedAt || ''));
+  const filtered = (zone ? items.filter((i) => i.zone === zone) : items).map(({ rank, ...i }) => i);
   const st = allSourceStates().find((s) => s.id === 'noticias');
   return {
-    zones: NEWS_ZONES,
+    zones: NEWS_ZONES.map((z) => (z.id === 'local' ? { ...z, label: propia ? `${loc.name} y zona` : z.label } : z)),
+    locality: { id: loc.id, name: loc.name },
     items: filtered.slice(0, Math.min(Number(limit) || 40, 80)),
     vacioTexto: 'No hay novedades importantes para el campo de Entre Ríos en este momento.',
-    criterio: 'Primero Gualeguay y la zona, después los departamentos de Entre Ríos, la provincia, y lo nacional solo si impacta al productor entrerriano (retenciones, sanidad, mercados, campaña). No se muestran espectáculos, deportes, curiosidades ni noticias de otras provincias. Últimos 30 días.',
+    criterio: propia
+      ? `Primero las notas que nombran a ${loc.name} (o su departamento), después los departamentos de Entre Ríos, la provincia, las notas locales de otras ciudades, y lo nacional solo si impacta al productor entrerriano. Para ${loc.name} no hay un diario local conectado todavía. Últimos 30 días.`
+      : 'Primero Gualeguay y la zona, después los departamentos de Entre Ríos, la provincia, y lo nacional solo si impacta al productor entrerriano (retenciones, sanidad, mercados, campaña). No se muestran espectáculos, deportes, curiosidades ni noticias de otras provincias. Últimos 30 días.',
     meta: meta('noticias', st?.last_success_at ? { fetchedAt: st.last_success_at } : null),
   };
 }
 
 // Para la portada: pocas y bien elegidas (últimos 10 días).
-function noticiasPortada() {
-  const n = noticias({ limit: 80 });
+function noticiasPortada(locId) {
+  const n = noticias({ limit: 80, loc: locId });
   const cutoff = new Date(Date.now() - 10 * 864e5).toISOString();
   return { items: n.items.filter((i) => i.pinned || (i.publishedAt || '') >= cutoff).slice(0, 5), vacioTexto: n.vacioTexto, meta: n.meta };
 }
@@ -409,7 +480,8 @@ export function inicio(locId) {
   const a = alertas(locId);
   const m = mercado();
   const pick = (k) => m.granos?.boards?.find((b) => b.key === k) || null;
-  const r = rios();
+  const r = riosData();
+  const rioLoc = rioDeLocalidad(locId, r);
   return {
     locality: c.locality,
     clima: { current: c.current, nearestObs: c.nearestObs, modelo: c.modelo, smnOficialUrl: c.smnOficialUrl, today: c.days[0] || null, tomorrow: c.days[1] || null, meta: c.meta.actual, metaPronostico: c.meta.pronostico, forecastOrigin: c.forecastOrigin },
@@ -419,8 +491,8 @@ export function inicio(locId) {
     hacienda: { ...m.fijados, enPie: m.enPie, meta: { indices: m.meta.indices, canuelas: m.meta.canuelas, rosgan: m.meta.rosgan } },
     granos: { items: ['soja', 'maiz', 'trigo', 'girasol', 'sorgo'].map(pick).filter(Boolean), date: m.granos?.date || null, arroz: m.arroz?.latest || null, meta: m.meta.granos, metaArroz: m.meta.arroz },
     dolar: dolar(),
-    rio: { main: r.main, meta: r.meta },
-    noticias: noticiasPortada(),
+    rio: { main: rioLoc, meta: r.meta },
+    noticias: noticiasPortada(locId),
   };
 }
 

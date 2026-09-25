@@ -91,7 +91,7 @@ async function handle(req, res) {
         if (path === '/api/fijados') return send(200, api.fijados());
         if (path === '/api/rios') return send(200, api.rios());
         if (path === '/api/sanitarias') return send(200, api.sanitarias());
-        if (path === '/api/noticias') return send(200, api.noticias({ zone: q.zona, limit: q.limit }));
+        if (path === '/api/noticias') return send(200, api.noticias({ zone: q.zona, limit: q.limit, loc: q.loc }));
         if (path === '/api/cultivos') return send(200, api.cultivos());
         if (path === '/api/fuentes') return send(200, api.fuentes());
         if (path === '/api/admin/sesion') return send(200, { admin: isAdmin(req), enabled: adminEnabled() });
