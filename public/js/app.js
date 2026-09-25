@@ -199,7 +199,7 @@
     // 3) Hacienda fijada
     const h = d.hacienda;
     const hac = `<div class="htiles">${hTile('🐂', 'NOVILLO', h.novillo)}${hTile('🐄', 'VACA', h.vaca)}${hTile('🐄', 'TERNERO', h.ternero)}</div>
-      <div class="enpie"><span class="enpie-n">Hacienda en pie · promedio general</span><span class="enpie-v">${h.enPie ? pesos(h.enPie.value) : '—'}</span><span class="enpie-s">${h.enPie ? `$ por kg vivo · ${fecha(h.enPie.date)} ${varTxt(h.enPie.variation, true)}` : 'sin dato'}</span></div>
+      <div class="enpie"><span class="enpie-n">Hacienda en pie · promedio general</span><span class="enpie-v">${h.enPie ? pesos(h.enPie.value) : '—'}</span><span class="enpie-s">${h.enPie ? `$ por kg vivo · ${fecha(h.enPie.date)} ${varTxt(h.enPie.variation, true)}` : 'sin dato'}</span>${h.enPie ? '<span class="enpie-nota">Índice general de todas las categorías: varía según qué se vendió ese día, aunque suban novillo y vaca.</span>' : ''}</div>
       <p class="src">Novillo (INMAG), vaca e índice general: Mercado Agroganadero de Cañuelas, último remate. Ternero: Índice Ternero de ROSGAN (remate mensual).</p>`;
 
     // 4) Granos
@@ -222,11 +222,12 @@
     const rio = r && !r.missing ? `<div class="rio-main ${esc(r.status.key)}">
         <div class="rio-h"><span class="rio-v">${r.height !== null ? num(r.height, 2) + ' m' : 'S/D'}</span><span class="rio-t">${rioTrend(r)}</span></div>
         <p><strong>${esc(r.status.label)}</strong>${r.alert !== null && r.alert !== undefined ? ` (alerta ${num(r.alert, 2)} m · evacuación ${num(r.evacuation, 2)} m)` : ''}</p>
-        <p class="src">${esc(r.label)} · lectura del ${r.dateOnly ? fecha(r.at) : fechaHora(r.at)}${r.stale ? ' · <strong>dato viejo</strong>' : ''} · ${esc(r.fuente)}</p></div>` : status(d.rio.meta);
+        ${r.nota ? `<p class="small">${esc(r.nota)}</p>` : ''}
+        <p class="src">${esc(r.titulo || r.label)} · lectura del ${r.dateOnly ? fecha(r.at) : fechaHora(r.at)}${r.stale ? ' · <strong>dato viejo</strong>' : ''} · ${esc(r.fuente)}</p></div>` : status(d.rio.meta);
 
     // 7) Noticias
     const n = d.noticias;
-    const news = n.items.length ? `<ul class="news">${n.items.map((x) => `<li><a class="title" href="${safeUrl(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.title)}</a><div class="meta">${esc(zoneLabel(x.zone))} · ${esc(x.sourceName)} · ${fecha(x.publishedAt)}</div></li>`).join('')}</ul>` : `<p>${esc(n.vacioTexto)}</p>`;
+    const news = n.items.length ? `<ul class="news">${n.items.map((x) => `<li><a class="title" href="${safeUrl(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.title)}</a><div class="meta">${esc(zoneLabel(x.zone, d.locality.name))} · ${esc(x.sourceName)} · ${fecha(x.publishedAt)}</div></li>`).join('')}</ul>` : `<p>${esc(n.vacioTexto)}</p>`;
 
     render(`
       <section class="hero" aria-labelledby="h-loc">
@@ -247,7 +248,7 @@
         <section class="card earth" aria-labelledby="h-granos"><h3 id="h-granos">🌾 Granos</h3>${gr}<a class="btn secondary" href="#/mercado#granos">Ver granos</a></section>
         <section class="card" aria-labelledby="h-dolar"><h3 id="h-dolar">💵 Dólar</h3>${dol}<a class="btn secondary" href="#/dolar">Ver dólar</a></section>
       </div>
-      <section class="card mt" aria-labelledby="h-rio"><h3 id="h-rio">🌊 Río Gualeguay</h3>${rio}<a class="btn secondary" href="#/rios">Ver todos los ríos</a></section>
+      <section class="card mt" aria-labelledby="h-rio"><h3 id="h-rio">🌊 ${esc(r && !r.missing && r.titulo ? r.titulo : 'Río')}</h3>${rio}<a class="btn secondary" href="#/rios">Ver todos los ríos</a></section>
       <section class="card mt" aria-labelledby="h-news"><h3 id="h-news">📰 Noticias del campo</h3>${news}<a class="btn secondary" href="#/noticias">Ver más noticias</a></section>
       <nav class="menu-grid" aria-label="Secciones">
         <a class="btn" href="#/clima">🌤️ Clima</a>
@@ -267,7 +268,8 @@
     return h >= 5 && h < 13 ? 'Buen día' : h >= 13 && h < 20 ? 'Buenas tardes' : 'Buenas noches';
   }
   const ZONES = { local: 'Gualeguay y zona', departamentos: 'Entre Ríos (departamentos)', provincia: 'Entre Ríos', nacional: 'Nacional' };
-  const zoneLabel = (z) => ZONES[z] || '';
+  // "local" se rotula con la localidad elegida (Gualeguay usa su diario local; las demás, notas que las nombran).
+  const zoneLabel = (z, locName) => (z === 'local' && locName && !['Gualeguay', 'Larroque', 'Ibicuy', 'Rosario del Tala'].includes(locName) ? `${locName} y zona` : ZONES[z] || '');
   function rioTrend(r) {
     if (!r.state || r.state === 'S/E') return 'sin tendencia';
     if (r.state === 'CRECE') return `▲ crece ${r.variation ? num(Math.abs(r.variation), 2) + ' m' : ''}`;
@@ -408,7 +410,7 @@
     const g = d.granos;
     const granos = g ? `<div class="table-wrap"><table class="prices"><caption>Pizarra Rosario del ${fecha(g.date)}</caption>
       <thead><tr><th>Producto</th><th class="num">Precio · unidad · fecha</th></tr></thead><tbody>
-      ${g.boards.map((b) => `<tr><td><strong>${esc(b.product)}</strong><br>${b.estimated ? '<span class="badge">estimativo</span>' : ''}${b.sinCotizacion ? '<span class="badge">sin cotización</span>' : ''}${trend(b.value, b.previous)}</td>
+      ${g.boards.map((b) => `<tr><td><strong>${esc(b.product)}</strong><br>${b.estimated ? '<span class="badge">estimativo</span>' : b.sinCotizacion ? '<span class="badge">sin cotización</span>' : ''}${b.sinCotizacion || b.estimated ? '' : trend(b.value, b.previous)}</td>
         <td class="num">${b.sinCotizacion && !b.estimated ? '—' : pesos(b.value)}<span class="sub">$ por tonelada · ${fecha(g.date)}${b.usd !== null && b.usd !== undefined ? `<br>US$ ${num(b.usd, 2)}` : ''}</span></td></tr>`).join('')}
       ${d.arroz ? `<tr><td><strong>Arroz cáscara largo fino</strong><br><span class="badge">precio mensual</span></td><td class="num">${pesos(d.arroz.latest.largoFino)}<span class="sub">$ por quintal (100 kg) · mes ${esc(d.arroz.latest.period)}</span></td></tr>
       <tr><td><strong>Arroz cáscara largo ancho</strong><br><span class="badge">precio mensual</span></td><td class="num">${pesos(d.arroz.latest.largoAncho)}<span class="sub">$ por quintal (100 kg) · mes ${esc(d.arroz.latest.period)}</span></td></tr>` : ''}
@@ -449,7 +451,7 @@
     render(`${back}
       <h2 class="page-title">💵 Dólar</h2>
       ${row('Dólar oficial (Banco Nación, billete)', d.oficial, 'Es la cotización de ventanilla del Banco Nación.')}
-      ${row('Dólar mayorista', d.mayorista, 'Referencia del mercado de cambios (BCRA). Es el que se usa para comercio exterior y, por eso, para los precios de los granos.')}
+      ${row('Dólar mayorista', d.mayorista, 'Referencia del mercado de cambios (BCRA) para el comercio exterior. Ojo: la pizarra de granos de Rosario pasa sus precios a dólares con el dólar divisa comprador del Banco Nación (se ve en Mercado), no con este.')}
       ${row('Dólar blue <span class="badge">informal</span>', d.blue, 'Valor del mercado informal, relevado por DolarApi.com. No es una cotización oficial.')}
       ${status(d.meta)}`);
   }
@@ -506,14 +508,14 @@
   async function pageNoticias(params) {
     setTitle('Noticias');
     const zona = params.get('zona') || '';
-    const d = await api('/api/noticias?limit=60' + (zona ? '&zona=' + encodeURIComponent(zona) : ''));
+    const d = await api('/api/noticias?limit=60&loc=' + encodeURIComponent(loc()) + (zona ? '&zona=' + encodeURIComponent(zona) : ''));
     render(`${back}
       <h2 class="page-title">📰 Noticias del campo</h2>
       <p class="lead">Solo lo que le importa al productor de Entre Ríos. Tocá el título para leer la nota completa en el sitio original.</p>
       <div class="chips" role="group" aria-label="Zona"><a class="chip${!zona ? ' active' : ''}" href="#/noticias">Todas</a>${d.zones.map((z) => `<a class="chip${z.id === zona ? ' active' : ''}" href="#/noticias?zona=${esc(z.id)}">${esc(z.label)}</a>`).join('')}</div>
       <section class="card">${d.items.length ? `<ul class="news">${d.items.map((n) => `<li>
         <a class="title" href="${safeUrl(n.url)}" target="_blank" rel="noopener noreferrer">${esc(n.title)}</a>
-        <div class="meta">${n.pinned ? '<span class="badge">destacada</span>' : ''}<span class="badge">${esc(zoneLabel(n.zone))}</span> ${esc(n.sourceName)} · ${fecha(n.publishedAt)}</div>
+        <div class="meta">${n.pinned ? '<span class="badge">destacada</span>' : ''}<span class="badge">${esc(zoneLabel(n.zone, d.locality && d.locality.name))}</span> ${esc(n.sourceName)} · ${fecha(n.publishedAt)}</div>
         ${n.summary ? `<p>${esc(n.summary)}</p>` : ''}</li>`).join('')}</ul>` : `<p class="no-alert">${esc(d.vacioTexto)}</p>`}
         ${status(d.meta)}</section>
       <p class="small muted">${esc(d.criterio)}</p>`);

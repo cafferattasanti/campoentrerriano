@@ -37,6 +37,47 @@
     if (p === 0 || (mm !== null && mm !== undefined && mm < 0.1 && p < 20)) return 'sin lluvia prevista';
     return `${p}% de probabilidad${mm ? ` · ${num(mm, 1)} mm` : ''}`;
   }
+  // Cuándo rige una alerta: "vigente" o "Dom 27, 9 a 15 h" (14:59 se redondea a 15 h).
+  function cuando(a) {
+    if (!a) return '';
+    const iso = (x) => x && String(x).length > 10;
+    if (a.kind === 'temperatura') return 'vigente';
+    const ahora = Date.now();
+    if (!iso(a.from) && !iso(a.to)) {
+      if (!a.from) return '';
+      const dia = (x) => { const d = new Date(x + 'T12:00:00-03:00'); return cap(d.toLocaleDateString('es-AR', { timeZone: TZ, weekday: 'short' }).replace('.', '')) + ' ' + d.toLocaleDateString('es-AR', { timeZone: TZ, day: 'numeric' }); };
+      const hoy = new Date().toLocaleDateString('en-CA', { timeZone: TZ });
+      if (a.from <= hoy && (!a.to || a.to >= hoy)) return 'vigente';
+      return a.to && a.to !== a.from ? `${dia(a.from)} a ${dia(a.to)}` : dia(a.from);
+    }
+    const f = a.from ? Date.parse(a.from) : null, t = a.to ? Date.parse(a.to) : null;
+    if ((f === null || f <= ahora) && (t === null || t > ahora)) return 'vigente';
+    const partes = (ms) => {
+      const d = new Date(ms);
+      let h = Number(d.toLocaleString('en-US', { timeZone: TZ, hour: 'numeric', hourCycle: 'h23' }));
+      const m = Number(d.toLocaleString('en-US', { timeZone: TZ, minute: 'numeric' }));
+      let dm = ms;
+      if (m >= 59) { h += 1; dm = ms + 60e3; }
+      const d2 = new Date(dm);
+      if (h === 24) h = 0;
+      const dia = cap(d2.toLocaleDateString('es-AR', { timeZone: TZ, weekday: 'short' }).replace('.', '')) + ' ' + d2.toLocaleDateString('es-AR', { timeZone: TZ, day: 'numeric' });
+      return { dia, h: m > 0 && m < 59 ? `${h}:${String(m).padStart(2, '0')}` : String(h) };
+    };
+    const A = f !== null ? partes(f) : null, B = t !== null ? partes(t) : null;
+    if (A && B) return A.dia === B.dia ? `${A.dia}, ${A.h} a ${B.h} h` : `${A.dia} ${A.h} h a ${B.dia} ${B.h} h`;
+    if (A) return `desde ${A.dia}, ${A.h} h`;
+    return `hasta ${B.dia}, ${B.h} h`;
+  }
+  // Fuente real del dato de río que se muestra (Prefectura o Hidráulica).
+  function fuenteRio(r) {
+    const f = (r && r.fuente) || '';
+    return /prefectura/i.test(f) ? 'Prefectura Naval' : /hidr[aá]ulica/i.test(f) ? 'Hidráulica ER' : '';
+  }
+  function rioTitulo(r) {
+    if (!r) return 'Río';
+    return r.titulo || r.label || 'Río';
+  }
+
   function rioTxt(r) {
     if (!r || r.missing || r.height === null || r.height === undefined) return null;
     const t = r.state === 'CRECE' ? 'crece' : r.state === 'BAJA' ? 'baja' : r.state === 'ESTAC' ? 'estacionario' : '';
@@ -87,7 +128,8 @@
       const rojo = (av && av.level === 'rojo') || (al && /roj|naranj/i.test(al.levelName || ''));
       ctx.fillStyle = rojo ? C.redSoft : C.yellowSoft; ctx.fillRect(60, y - 44, W - 120, 70);
       ctx.fillStyle = rojo ? C.red : C.yellow; ctx.fillRect(60, y - 44, 10, 70);
-      const msg = al ? `Alerta SMN: ${al.event} (${String(al.levelName || '').toLowerCase()})` : av.title;
+      const q = al ? cuando(al) : '';
+      const msg = al ? `Alerta SMN: ${al.event} (${String(al.levelName || '').toLowerCase()})${q ? ' · ' + q : ''}` : av.title;
       text(ctx, fit(ctx, msg, `700 32px ${SANS}`, W - 170), 92, y + 2, `700 32px ${SANS}`, rojo ? C.red : C.yellow);
       y += 70;
     }
@@ -147,8 +189,11 @@
     rule(ctx, y);
 
     // Río
-    const r = rioTxt(d.rio && d.rio.main);
-    text(ctx, 'RÍO GUALEGUAY · PUERTO RUIZ', 60, y + 50, `700 30px ${SANS}`, C.earth);
+    const rm = d.rio && d.rio.main;
+    const r = rioTxt(rm);
+    const tit = rioTitulo(rm).replace(' en ', ' · ').toUpperCase();
+    text(ctx, fit(ctx, tit, `700 30px ${SANS}`, rm && rm.km && rm.relacion !== 'propio' ? 640 : W - 120), 60, y + 50, `700 30px ${SANS}`, C.earth);
+    if (rm && rm.km && rm.relacion !== 'propio') text(ctx, `estación más cercana · ${rm.km} km`, W - 60, y + 50, `400 24px ${SANS}`, C.muted, 'right');
     if (r) {
       text(ctx, r.h, 60, y + 108, `700 52px ${SANS}`, C.navy);
       ctx.font = `700 52px ${SANS}`; const w = ctx.measureText(r.h).width;
@@ -160,7 +205,8 @@
     ctx.fillStyle = C.navy; ctx.fillRect(0, H - 160, W, 160);
     text(ctx, 'Todo actualizado en', W / 2, H - 110, `400 28px ${SANS}`, '#e8dcc6', 'center');
     text(ctx, WEB, W / 2, H - 66, `700 42px ${SANS}`, '#fff', 'center');
-    text(ctx, 'Fuentes: Mercado Agroganadero · ROSGAN · BNA · Bolsa de Rosario · Open-Meteo · Hidráulica ER', W / 2, H - 24, `400 21px ${SANS}`, '#cbb99a', 'center');
+    const fr = r ? fuenteRio(rm) : '';
+    text(ctx, fit(ctx, 'Fuentes: Mercado Agroganadero · ROSGAN · BNA · Bolsa de Rosario · Open-Meteo' + (fr ? ' · ' + fr : ''), `400 21px ${SANS}`, W - 60), W / 2, H - 24, `400 21px ${SANS}`, '#cbb99a', 'center');
     return cv;
   }
 
@@ -171,14 +217,18 @@
     const p = (n, x) => `${n}: ${x ? pesos(Math.round(x.value)) + '/kg' + v(x) : 'sin dato'}`;
     const c = d.clima || {};
     const conProb = c.modelo ? c.modelo.conProbabilidad : null;
-    const r = rioTxt(d.rio && d.rio.main);
+    const rm = d.rio && d.rio.main;
+    const r = rioTxt(rm);
+    const g = (d.granos && d.granos.items ? d.granos.items : []).filter((i) => ['soja', 'maiz', 'trigo'].includes(i.key));
+    const granos = g.length ? 'Granos Rosario ($/t): ' + g.map((i) => `${i.product.replace(/\s*\(.*\)/, '')} ${i.sinCotizacion && !i.estimated ? 'S/C' : pesos(Math.round(i.value)) + (i.estimated ? ' (estimativo)' : '')}`).join(' · ') : 'Granos Rosario: sin dato';
     const fechaCorta = dd(new Date().toISOString());
     return [
       `*Parte del día · ${d.locality.name} (${fechaCorta})*`,
       p('Novillo', h.novillo), p('Vaca', h.vaca), p('Ternero', h.ternero) + (h.ternero ? ' · ROSGAN' : ''),
       `Dólar BNA: ${d.dolar && d.dolar.oficial ? '$ ' + num(d.dolar.oficial.venta) : 'sin dato'}`,
+      granos,
       `Lluvia hoy: ${rainShort(c.today, conProb)} · mañana: ${rainShort(c.tomorrow, conProb)}`,
-      `Río Gualeguay (Pto. Ruiz): ${r ? r.h + (r.t ? ', ' + r.t : '') : 'sin dato'}`,
+      `${rioTitulo(rm)}${rm && rm.km && rm.relacion !== 'propio' ? ` (estación más cercana, a ${rm.km} km)` : ''}: ${r ? r.h + (r.t ? ', ' + r.t : '') : 'sin dato'}${r && fuenteRio(rm) ? ' · ' + fuenteRio(rm) : ''}`,
       `Más en ${WEB_URL}`,
     ].join('\n');
   }
@@ -235,7 +285,7 @@
     (sh || document.getElementById('parte-texto')).focus();
   }
 
-  window.CampoParte = { abrir, draw, resumen };
+  window.CampoParte = { abrir, draw, resumen, cuando };
   // Visita que llega desde un parte compartido por WhatsApp (solo se cuenta el total).
   if (/[?&]p=wa\b/.test(location.search)) { evento('llegada'); try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) { /* nada */ } }
 })();
