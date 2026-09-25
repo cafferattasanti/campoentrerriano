@@ -36,7 +36,7 @@ function loadStatic(rel) {
   if (hit && hit.mtime === mtime) return hit;
   const body = readFileSync(full);
   const type = MIME[extname(full)] || 'application/octet-stream';
-  const entry = { body, gz: /text|json|svg|javascript|manifest/.test(type) ? gzipSync(body, { level: 9 }) : null, type, etag: '"' + createHash('sha1').update(body).digest('base64url').slice(0, 16) + '"', mtime };
+  const entry = { body, gz: /text|json|svg|javascript|manifest/.test(type) ? gzipSync(body, { level: 9 }) : null, type, etag: '"' + createHash('sha1').update(body).update(VERSION + SECURITY['Content-Security-Policy']).digest('base64url').slice(0, 16) + '"', mtime };
   fileCache.set(full, entry);
   return entry;
 }
@@ -127,7 +127,7 @@ async function handle(req, res) {
   let f = loadStatic(rel);
   if (!f) { f = loadStatic('/404.html'); if (!f) { res.writeHead(404); return res.end('No encontrado'); } res.statusCode = 404; }
   const isHtml = f.type.startsWith('text/html');
-  if (req.headers['if-none-match'] === f.etag) { res.writeHead(304, { ETag: f.etag }); return res.end(); }
+  if (req.headers['if-none-match'] === f.etag) { res.writeHead(304, { ...SECURITY, ETag: f.etag }); return res.end(); }
   const gz = f.gz && /\bgzip\b/.test(req.headers['accept-encoding'] || '');
   res.writeHead(res.statusCode || 200, {
     ...SECURITY,
